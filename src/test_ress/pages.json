@@ -1,0 +1,36 @@
+{
+  "data": [
+    {
+      "index": 0,
+      "name": "item001",
+      "ptype": "item",
+      "size": {
+        "width": [300, "px"],
+        "paddingLeft": [10, "px"],
+        "paddingTop": [10, "px"],
+        "paddingRight": [10, "px"],
+        "paddingBottom": [10, "px"]
+      },
+      "styles": {
+        "backgroundColor": "#FFFFFF"
+      },
+      "children": [
+        {
+          "name": "input001",
+          "parent": "item001",
+          "ctype": "Input",
+          "placeholder": "请输入",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "name": "list002",
+      "ptype": "list",
+      "size": {
+        "width": [300, "px"]
+      }
+    }
+  ]
+}

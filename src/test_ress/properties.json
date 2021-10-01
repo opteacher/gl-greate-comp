@@ -1,0 +1,200 @@
+{
+  "data": {
+    "position": [
+      {
+        "title": "定位方式",
+        "key": "position",
+        "type": "select",
+        "options": ["static", "relative", "absolute", "fixed"],
+        "value": "static"
+      },
+      {
+        "title": "左坐标",
+        "key": "left",
+        "type": "number",
+        "value": 0,
+        "unit": "px",
+        "disabled": {
+          "key": "position",
+          "cmp": "=",
+          "val": "static"
+        }
+      },
+      {
+        "title": "上坐标",
+        "key": "top",
+        "type": "number",
+        "value": 0,
+        "unit": "px",
+        "disabled": {
+          "key": "position",
+          "cmp": "=",
+          "val": "static"
+        }
+      },
+      {
+        "title": "右坐标",
+        "key": "right",
+        "type": "number",
+        "value": 0,
+        "unit": "px",
+        "disabled": {
+          "key": "position",
+          "cmp": "=",
+          "val": "static"
+        }
+      },
+      {
+        "title": "下坐标",
+        "key": "bottom",
+        "type": "number",
+        "value": 0,
+        "unit": "px",
+        "disabled": {
+          "key": "position",
+          "cmp": "=",
+          "val": "static"
+        }
+      }
+    ],
+    "size": [
+      {
+        "title": "宽度",
+        "key": "width",
+        "type": "number",
+        "value": "100",
+        "unit": "per"
+      },
+      {
+        "title": "高度",
+        "key": "height",
+        "type": "number",
+        "value": "auto"
+      },
+      {
+        "title": "内边距（左）",
+        "key": "paddingLeft",
+        "type": "number",
+        "value": "auto"
+      },
+      {
+        "title": "内边距（上）",
+        "key": "paddingTop",
+        "type": "number",
+        "value": "auto"
+      },
+      {
+        "title": "内边距（右）",
+        "key": "paddingRight",
+        "type": "number",
+        "value": "auto"
+      },
+      {
+        "title": "内边距（下）",
+        "key": "paddingBottom",
+        "type": "number",
+        "value": "auto"
+      },
+      {
+        "title": "外边距（左）",
+        "key": "marginLeft",
+        "type": "number",
+        "value": "auto"
+      },
+      {
+        "title": "外边距（上）",
+        "key": "marginTop",
+        "type": "number",
+        "value": "auto"
+      },
+      {
+        "title": "外边距（右）",
+        "key": "marginRight",
+        "type": "number",
+        "value": "auto"
+      },
+      {
+        "title": "外边距（下）",
+        "key": "marginBottom",
+        "type": "number",
+        "value": "auto"
+      }
+    ],
+    "styles": [
+      {
+        "title": "背景色",
+        "key": "backgroundColor",
+        "type": "color",
+        "value": [255, 255, 255, 1]
+      }
+    ],
+    "Input": [
+      {
+        "title": "组件名",
+        "key": "name",
+        "type": "string",
+        "value": ""
+      },
+      {
+        "title": "组件类型",
+        "key": "ctype",
+        "type": "text",
+        "value": "Input"
+      },
+      {
+        "title": "提示文字",
+        "key": "placeholder",
+        "type": "string",
+        "value": "Please input texts"
+      },
+      {
+        "title": "类型",
+        "key": "type",
+        "type": "select",
+        "options": ["text", "number", "password", "phone", "email"],
+        "value": "text"
+      },
+      {
+        "title": "位置",
+        "key": "position",
+        "type": "position",
+        "value": {}
+      },
+      {
+        "title": "尺寸",
+        "key": "size",
+        "type": "size",
+        "value": {}
+      }
+    ],
+    "Button": [],
+    "Unknown": [],
+    "Page": [
+      {
+        "title": "页面名",
+        "key": "name",
+        "type": "string",
+        "value": ""
+      },
+      {
+        "title": "页面类型",
+        "key": "ptype",
+        "type": "select",
+        "options": ["item", "list", "form", "other"],
+        "value": ""
+      },
+      {
+        "title": "页面尺寸",
+        "key": "size",
+        "type": "size",
+        "value": {}
+      },
+      {
+        "title": "页面样式",
+        "key": "styles",
+        "type": "styles",
+        "value": {}
+      }
+    ]
+  }
+}
