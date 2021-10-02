@@ -62,7 +62,7 @@
         "title": "宽度",
         "key": "width",
         "type": "number",
-        "value": "100",
+        "value": 100,
         "unit": "per"
       },
       {
@@ -158,16 +158,60 @@
         "title": "位置",
         "key": "position",
         "type": "position",
-        "value": {}
+        "value": null
       },
       {
         "title": "尺寸",
         "key": "size",
         "type": "size",
-        "value": {}
+        "value": null
       }
     ],
-    "Button": [],
+    "Button": [
+      {
+        "title": "组件名",
+        "key": "name",
+        "type": "string",
+        "value": ""
+      },
+      {
+        "title": "组件类型",
+        "key": "ctype",
+        "type": "text",
+        "value": "Button"
+      },
+      {
+        "title": "按钮文本",
+        "key": "#content",
+        "type": "string",
+        "value": "按钮"
+      },
+      {
+        "title": "按钮图标",
+        "key": "type",
+        "type": "icon",
+        "value": ""
+      },
+      {
+        "title": "类型",
+        "key": "type",
+        "type": "select",
+        "value": "default",
+        "options": ["default", "primary", "link"]
+      },
+      {
+        "title": "位置",
+        "key": "position",
+        "type": "position",
+        "value": null
+      },
+      {
+        "title": "尺寸",
+        "key": "size",
+        "type": "size",
+        "value": null
+      }
+    ],
     "Unknown": [],
     "Page": [
       {
@@ -187,13 +231,13 @@
         "title": "页面尺寸",
         "key": "size",
         "type": "size",
-        "value": {}
+        "value": null
       },
       {
         "title": "页面样式",
         "key": "styles",
         "type": "styles",
-        "value": {}
+        "value": null
       }
     ]
   }

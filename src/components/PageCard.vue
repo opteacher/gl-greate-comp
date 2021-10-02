@@ -1,8 +1,7 @@
 <template>
 <div
-  :name="page.name"
+  :id="page.name"
   class="white-bkgd"
-  :class="{ 'card-active': isActive }"
   :style="styles"
 >
   <a-empty class="mt-10"
@@ -19,9 +18,8 @@
 </template>
 
 <script lang="ts">
-import { buildStyles, Page, Unit } from '@/common'
-import { computed, defineComponent, onMounted } from 'vue'
-import { useStore } from 'vuex'
+import { buildStyles, Page, Rect } from '@/common'
+import { computed, defineComponent, onMounted, reactive } from 'vue'
 import CompoCard from '../components/CompoCard.vue'
 export default defineComponent({
   name: 'PageCard',
@@ -32,54 +30,44 @@ export default defineComponent({
     page: { type: Page, required: true }
   },
   setup (props) {
-    const store = useStore()
-    const isActive = computed(() => {
-      return !store.getters.seledCompo.name
-        && store.getters.seledPage.name === props.page.name
-    })
     const styles = computed(() => {
       return [
         'position: absolute',
-        `left: ${props.page.position.left[0]}px`,
-        `top: ${props.page.position.top[0]}px`,
+        `left: ${area.left}px`,
+        `top: ${area.top}px`,
         buildStyles(props.page)
       ].join(';')
     })
+    const area = reactive(new Rect())
+    const rszObs = new ResizeObserver(onSizeChanged)
 
     onMounted(() => {
+      onSizeChanged()
+      rszObs.observe(
+        document.getElementById(props.page.name) as Element
+      )
+    })
+
+    function onSizeChanged () {
       const ctrMain = document.getElementById('ctrMain')
+      if (!ctrMain) {
+        return
+      }
       const ctrMainWid = ctrMain?.clientWidth || 0
       const ctrMainHgt = ctrMain?.clientHeight || 0
-      const pages = document.getElementsByName(props.page.name)
-      const thsPage = pages[0]
-      const thsPageWid = thsPage.clientWidth
-      const thsPageHgt = thsPage.clientHeight
-      store.commit('SEL_NODE', props.page.name)
-      store.commit('SET_PROP_VALUE', {
-        key: 'position.left',
-        value: (ctrMainWid * props.page.index) +
-          (ctrMainWid >> 1) - (thsPageWid >> 1),
-        unit: Unit.px
-      })
-      store.commit('SET_PROP_VALUE', {
-        key: 'position.top',
-        value: (ctrMainHgt >> 1) - (thsPageHgt >> 1),
-        unit: Unit.px
-      })
-      store.commit('SET_PROP_VALUE', {
-        key: 'size.width',
-        value: thsPageWid,
-        unit: Unit.px
-      })
-      store.commit('SET_PROP_VALUE', {
-        key: 'size.height',
-        value: thsPageHgt,
-        unit: Unit.px
-      })
-    })
+      const thsPage = document.getElementById(props.page.name)
+      if (!thsPage) {
+        return
+      }
+      area.width = thsPage.clientWidth
+      area.height = thsPage.clientHeight
+      area.left = (ctrMainWid * props.page.index) +
+        (ctrMainWid >> 1) - (area.width >> 1)
+      area.top = (ctrMainHgt >> 1) - (area.height >> 1)
+    }
     return {
-      isActive,
-      styles
+      styles,
+      onSizeChanged
     }
   }
 })

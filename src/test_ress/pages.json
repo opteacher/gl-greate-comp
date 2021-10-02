@@ -5,7 +5,6 @@
       "name": "item001",
       "ptype": "item",
       "size": {
-        "width": [300, "px"],
         "paddingLeft": [10, "px"],
         "paddingTop": [10, "px"],
         "paddingRight": [10, "px"],

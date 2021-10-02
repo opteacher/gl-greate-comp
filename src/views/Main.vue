@@ -9,7 +9,7 @@
       'border-right': '1px solid rgb(240, 242, 245)',
       'overflow-y': 'auto'
     }">
-      <compo-box :onCompoAddToPage="onCompoAddToPage"/>
+      <compo-box/>
     </a-layout-sider>
     <a-layout-content id="ctrMain" style="flex: 1; overflow: scroll">
       <div id="pnlMain" class="main-container">
@@ -17,6 +17,7 @@
           v-for="page in pages"
           :key="page.name"
           :page="page"
+          :ref="el => { page.ref = el }"
         />
       </div>
     </a-layout-content>
@@ -36,16 +37,28 @@
     </a-row>
   </a-layout-footer>
 </a-layout>
+<a-modal
+  :visible="addCmpVisible"
+  title="指定组件添加的页面"
+  @ok="onAddCmpSubmit"
+  @cancel="store.commit('SET_ADD_CMP_DLG', false)"
+>
+  <add-compo-form ref="addCmpFormRef"/>
+</a-modal>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, watch } from 'vue'
+import { computed, defineComponent, onMounted, ref, toRaw, watch } from 'vue'
 import CompoBox from '../components/CompoBox.vue'
 import OperBox from '../components/OperBox.vue'
 import StructBox from '../components/StructBox.vue'
 import PageCard from '../components/PageCard.vue'
 import OperInfo from '../components/OperInfo.vue'
+import AddCompoForm from '../components/AddCompoForm.vue'
 import { useStore } from 'vuex'
+import { Compo, Property, CompoType } from '@/common'
+import propsRess from '../test_ress/properties.json'
+import { notification } from 'ant-design-vue'
 export default defineComponent({
   name: 'MainPanel',
   components: {
@@ -54,13 +67,25 @@ export default defineComponent({
     StructBox,
     PageCard,
     OperInfo,
+    AddCompoForm,
   },
   setup () {
     const store = useStore()
     const pages = computed(() => store.getters.pages)
+    const addCmpVisible = computed(() => store.getters.addCmpActive)
+    const addCmpFormRef = ref()
+    const rszObs = new ResizeObserver(() => {
+      for (const page of pages.value) {
+        page.ref.onSizeChanged()
+      }
+    })
 
     onMounted(async () => {
       await store.dispatch('initialize')
+      // @_@：测试用
+      store.commit('SEL_NODE', 'item001')
+
+      rszObs.observe(document.getElementById('ctrMain') as Element)
     })
     watch(() => store.getters.seledPage, () => {
       const ctrMain = document.getElementById('ctrMain')
@@ -79,12 +104,41 @@ export default defineComponent({
       }, 10)
     })
 
-    function onCompoAddToPage (page: string) {
-      console.log(page)
+    async function onAddCmpSubmit () {
+      try {
+        await addCmpFormRef.value.formRef.validate()
+        const formState = toRaw(addCmpFormRef.value.formState)
+
+        const compo = new Compo()
+        compo.name = formState.name
+        compo.parent = formState.parent
+        for (const prop of (propsRess.data[formState.type as CompoType] as any)
+          .map((item: any) => Property.copy(item))
+        ) {
+          if (prop.key === 'name' || prop.key === 'parent') {
+            continue
+          }
+          if (prop.value) {
+            compo[prop.key] = prop.value
+          }
+        }
+        store.commit('ADD_COMPO', compo)
+        addCmpFormRef.value.formRef.resetFields()
+        store.commit('SET_ADD_CMP_DLG', false)
+      } catch (e) {
+        notification.error({
+          message: '添加组件失败！',
+          description: JSON.stringify(e)
+        })
+      }
     }
     return {
+      store,
       pages,
-      onCompoAddToPage
+      addCmpVisible,
+      addCmpFormRef,
+
+      onAddCmpSubmit
     }
   }
 })

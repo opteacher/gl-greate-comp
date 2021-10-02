@@ -7,7 +7,35 @@
     v-model:expandedKeys="expdedNodes"
     :show-line="true"
     @select="onTreeNodeSelect"
-  />
+  >
+    <template #title="{ key: nodeKey, title }">
+      <a-dropdown :trigger="['contextmenu']">
+        <span>{{ title }}</span>
+        <template #overlay>
+          <a-menu @click="({ key: menuKey }) => onTreeMenuClick(nodeKey, menuKey)">
+            <a-menu-item key="addChild">
+              <template #icon>
+                <SubnodeOutlined />
+              </template>
+              <span>添加子节点</span>
+            </a-menu-item>
+            <a-menu-item key="addBro">
+              <template #icon>
+                <SisternodeOutlined />
+              </template>
+              <span>添加兄弟节点</span>
+            </a-menu-item>
+            <a-menu-item key="delete">
+              <template #icon>
+                <DeleteOutlined style="color: #f5222d"/>
+              </template>
+              <span style="color: #f5222d">删除</span>
+            </a-menu-item>
+          </a-menu>
+        </template>
+      </a-dropdown>
+    </template>
+  </a-tree>
 </div>
 <div class="props-form">
   <a-empty
@@ -36,11 +64,18 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, reactive, ref, watch } from 'vue'
+import { computed, createVNode, defineComponent, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import Properties from './Properties.vue'
 import { Compo, Property, Page } from '@/common'
 import properties from '../test_ress/properties.json'
+import {
+  SubnodeOutlined,
+  SisternodeOutlined,
+  DeleteOutlined,
+  ExclamationCircleOutlined
+} from '@ant-design/icons-vue'
+import { Modal } from 'ant-design-vue'
 interface TreeNode {
   title: string
   key: string
@@ -54,7 +89,10 @@ interface SubProps {
 export default defineComponent({
   name: 'StructBox',
   components: {
-    Properties
+    Properties,
+    SubnodeOutlined,
+    SisternodeOutlined,
+    DeleteOutlined
   },
   setup () {
     const store = useStore()
@@ -77,6 +115,10 @@ export default defineComponent({
       expdedNodes.value = []
     })
     watch(seledCompo, () => {
+      if (!seledCompo.value.name.length) {
+        onSelPageChanged()
+        return
+      }
       const props = toPropList(seledCompo.value.ctype, seledCompo.value)
       if (props.bscProps.length) {
         bscProps.value = props.bscProps
@@ -86,7 +128,10 @@ export default defineComponent({
       }
       onSelCompoChanged(seledCompo.value)
     })
-    watch(() => store.getters.pages, () => {
+    watch(() => [
+      store.getters.pages.length,
+      store.getters.allCompoNames.length
+    ], () => {
       cvtPagesToTree()
     })
 
@@ -96,6 +141,7 @@ export default defineComponent({
       subProps.value = props.subProps
     }
     function onSelCompoChanged (compo: Compo) {
+      // 展开选中组件的所有父节点
       if (!compo.name.length) {
         return
       }
@@ -130,6 +176,30 @@ export default defineComponent({
         store.commit('SEL_NODE', seleds[0])
       } else {
         store.commit('RST_COMPO')
+      }
+    }
+    function onTreeMenuClick(nodeKey: string, menuKey: string) {
+      switch (menuKey) {
+      case 'addChild':
+        store.commit('SET_ADD_CMP_DLG', {
+          show: true, belong: nodeKey
+        })
+        break
+      case 'addBro':
+        break
+      case 'delete':
+        Modal.confirm({
+          title: () => '确定删除该节点?',
+          icon: () => createVNode(ExclamationCircleOutlined),
+          content: () => '删除节点，该节点之后的子节点也会被全部删除！',
+          okText: () => '确定',
+          okType: 'danger',
+          cancelText: () => '取消',
+          onOk() {
+            store.commit('DEL_COMPO', nodeKey)
+          },
+        })
+        break
       }
     }
     function toPropList (iden: string, obj: any): {
@@ -187,7 +257,8 @@ export default defineComponent({
       subProps,
       actProps,
 
-      onTreeNodeSelect
+      onTreeNodeSelect,
+      onTreeMenuClick
     }
   }
 })

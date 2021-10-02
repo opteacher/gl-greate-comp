@@ -5,7 +5,9 @@
       <a-list-item>
         <a-list-item-meta :description="item.desc">
           <template #title>
-            <a href="#" @click="addToPgVisible = true">{{item.name}}</a>
+            <a href="#" @click="onAddCompoVisible(item.name)">
+              {{item.name}}
+            </a>
           </template>
           <template #avatar>
             <a-avatar
@@ -20,53 +22,27 @@
       </a-list-item>
     </template>
   </a-list>
-  <a-modal
-    v-model:visible="addToPgVisible"
-    title="指定组件添加的页面"
-    @ok="onAddCompoSubmit"
-  >
-    <a-select style="width: 100%" v-model:value="addToPage">
-      <a-select-option value="item">列表项</a-select-option>
-    </a-select>
-  </a-modal>
+
 </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue'
-import { ComponentInfo } from '@/common'
-import compoRess from '@/test_ress/components.json'
+import { computed, defineComponent } from 'vue'
+import { useStore } from 'vuex'
 export default defineComponent({
   name: 'ComponentBox',
-  props: {
-    onCompoAddToPage: { type: Function, required: true },
-  },
-  setup (props) {
-    const components = ref([] as ComponentInfo[])
-    const addToPgVisible = ref(false)
-    const addToPage = ref('')
+  setup () {
+    const store = useStore()
+    const components = computed(() => store.getters.allCompoInfos)
 
-    onMounted(() => {
-      onRefresh()
-    })
-
-    function onRefresh () {
-      components.value = compoRess.data.map((compo: any) => {
-        return ComponentInfo.copy(compo)
+    function onAddCompoVisible (cmpName: string) {
+      store.commit('SET_ADD_CMP_DLG', {
+        show: true, cmpTyp: cmpName,
       })
-    }
-    function onAddCompoSubmit () {
-      props.onCompoAddToPage(addToPage.value)
-      addToPage.value = ''
-      addToPgVisible.value = false
     }
     return {
       components,
-      addToPgVisible,
-      addToPage,
-
-      onRefresh,
-      onAddCompoSubmit
+      onAddCompoVisible
     }
   }
 })

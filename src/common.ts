@@ -1,3 +1,4 @@
+import { ref, Ref } from 'vue'
 import compoData from './test_ress/components.json'
 
 export const uiFrameworks = {
@@ -35,7 +36,7 @@ export interface SelUiFwkFormState {
   library: string
 }
 
-export class ComponentInfo {
+export class CompoInfo {
   name: string
   desc: string
   cover: string
@@ -48,8 +49,8 @@ export class ComponentInfo {
     this.lib = ''
   }
 
-  public static copy (src: any, tgt?: ComponentInfo): ComponentInfo {
-    tgt = tgt || new ComponentInfo()
+  public static copy (src: any, tgt?: CompoInfo): CompoInfo {
+    tgt = tgt || new CompoInfo()
     tgt.name = src.name
     tgt.desc = src.desc
     tgt.cover = src.cover
@@ -158,7 +159,7 @@ export class Size extends StrIterable {
 
   constructor () {
     super()
-    this.width = [100, Unit['%']] as NumSize
+    this.width = [NaN, Unit.px] as NumSize
     this.height = [NaN, Unit.px] as NumSize
     this.paddingLeft = [NaN, Unit.px]
     this.paddingTop = [NaN, Unit.px]
@@ -222,43 +223,47 @@ export class Styles extends StrIterable {
 
   constructor () {
     super()
-    this.backgroundColor = '#sFFFFFF'
+    this.backgroundColor = ''
   }
 
   public static copy (src: any, tgt?: Styles): Styles {
     tgt = tgt || new Styles()
-    tgt.backgroundColor = src.backgroundColor || '#FFFFFF'
+    tgt.backgroundColor = src.backgroundColor || ''
     return tgt
   }
 }
 
-export function buildStyles (styled: StrIterable): string {
+export function buildStyles (styled: StrIterable, ignores: string[] = []): string {
   const pos = styled.position ? styled.position.position : 'static'
-  const mkNumStyle = (num: NumSize, key: string): string => {
-    return !isNaN(num[0]) ? `${key}: ${num[0]}${num[1]}` : ''
+  const mkNumStyle = (key: string, num: NumSize): string => {
+    if (!ignores.includes(key) && num && !isNaN(num[0])) {
+      return `${key}: ${num[0]}${num[1]}`
+    } else {
+      return ''
+    }
   }
   const mkClrStyle = (key: string, color?: string): string => {
-    return color ? `${key}: ${color}` : ''
+    return !ignores.includes(key) && color ? `${key}: ${color}` : ''
   }
   return (styled.styles ? [
     mkClrStyle('background-color', styled.styles.backgroundColor)
   ] : []).concat(pos !== 'static' ? [
-    `position: ${pos}`,
-    mkNumStyle(styled.position.left, 'left'),
-    mkNumStyle(styled.position.top, 'top'),
-    mkNumStyle(styled.position.right, 'right'),
-    mkNumStyle(styled.position.bottom, 'bottom'),
+    !ignores.includes('position') ? `position: ${pos}` : '',
+    mkNumStyle('left', styled.position.left),
+    mkNumStyle('top', styled.position.top),
+    mkNumStyle('right', styled.position.right),
+    mkNumStyle('bottom', styled.position.bottom),
   ] : []).concat([
-    mkNumStyle(styled.size.width, 'width'),
-    mkNumStyle(styled.size.height, 'height'),
-    mkNumStyle(styled.size.paddingLeft, 'padding-left'),
-    mkNumStyle(styled.size.paddingTop, 'padding-top'),
-    mkNumStyle(styled.size.paddingRight, 'padding-right'),
-    mkNumStyle(styled.size.paddingBottom, 'padding-bottom'),
-    mkNumStyle(styled.size.marginLeft, 'margin-left'),
-    mkNumStyle(styled.size.marginTop, 'margin-top'),
-    mkNumStyle(styled.size.marginRight, 'margin-right'),
-    mkNumStyle(styled.size.marginBottom, 'margin-bottom'),
+    mkNumStyle('width', styled.size.width),
+    mkNumStyle('height', styled.size.height),
+    mkNumStyle('padding-left', styled.size.paddingLeft),
+    mkNumStyle('padding-top', styled.size.paddingTop),
+    mkNumStyle('padding-right', styled.size.paddingRight),
+    mkNumStyle('padding-bottom', styled.size.paddingBottom),
+    mkNumStyle('margin-left', styled.size.marginLeft),
+    mkNumStyle('margin-top', styled.size.marginTop),
+    mkNumStyle('margin-right', styled.size.marginRight),
+    mkNumStyle('margin-bottom', styled.size.marginBottom),
   ]).join(';')
 }
 
@@ -293,17 +298,18 @@ export class Compo extends StrIterable {
 
   public toAttributes (): any {
     const ret: {
-      name: string,
+      id: string,
       style: string,
       [specProp: string]: any
     } = {
-      name: this.name,
+      id: this.name,
       style: buildStyles(this)
     }
     for (const [key, value] of Object.entries(this)) {
       if (key === 'name' || key === 'parent'
       || key === 'ctype' || key === 'size'
-      || key === 'position' || key === 'children') {
+      || key === 'position' || key === 'children'
+      || key === 'styles' || key === '#content') {
         continue
       }
       ret[key] = value
@@ -333,7 +339,8 @@ export class Compo extends StrIterable {
     for (const [key, value] of Object.entries(src)) {
       if (key === 'name' || key === 'parent'
       || key === 'ctype' || key === 'size'
-      || key === 'position' || key === 'children') {
+      || key === 'position' || key === 'children'
+      || key === 'styles') {
         continue
       }
       tgt[key] = value
@@ -344,7 +351,8 @@ export class Compo extends StrIterable {
 
 export type SelOpn = string | { title: string, value: string }
 
-export type PropType = 'string' | 'number' | 'select' | 'text'
+// #content: 写在标签内容
+export type PropType = 'string' | 'number' | 'select' | 'text' | '#content' | 'icon'
 
 export type CmpType = '=' | '!=' | 'in'
 
@@ -398,11 +406,13 @@ export function loadCompos () {
 export class Page extends Compo {
   index: number
   ptype: PageType
+  ref: Ref
 
   constructor() {
     super()
     this.index = 0
     this.ptype = 'other'
+    this.ref = ref()
   }
 
   public static copy (src: any, tgt?: Page): Page {

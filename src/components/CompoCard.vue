@@ -17,10 +17,12 @@
   @mouseup="onMouseUp"
 />
 <keep-alive>
-  <component :is="curTab"
+  <component :is="curTag"
     :class="{ 'card-active': isActive }"
     v-bind="component.toAttributes()"
-  />
+  >
+    {{component['#content']}}
+  </component>
 </keep-alive>
 </template>
 
@@ -55,13 +57,20 @@ export default defineComponent({
     const compoInfo = compoData.data.find(compo => {
       return compo.name === component.ctype
     })
-    const curTab = ref(compoInfo?.tag)
+    const curTag = ref(compoInfo?.tag)
+    const rszObs = new ResizeObserver(updMask)
 
-    onMounted(updMask)
+    onMounted(() => {
+      updMask()
+      rszObs.observe(document.getElementById(component.name) as Element)
+    })
 
     function updMask () {
-      const els = document.getElementsByName(component.name)
-      const el: HTMLElement = els[0]
+      const el: HTMLElement | null = document
+        .getElementById(component.name)
+      if (!el) {
+        return
+      }
       mask.area.left = el.offsetLeft
       mask.area.top = el.offsetTop
       mask.area.width = el.offsetWidth
@@ -114,7 +123,7 @@ export default defineComponent({
       isActive,
       mask,
       mousedown,
-      curTab,
+      curTag,
 
       onCompoClicked,
       onMouseDown,
