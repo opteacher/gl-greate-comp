@@ -27,14 +27,8 @@
       <struct-box/>
     </a-layout-sider>
   </a-layout>
-  <a-layout-footer class="fix-bottom plr-20">
-    <a-row type="flex">
-      <a-col flex="1">
-        <oper-info/>
-      </a-col>
-      <a-col flex="1"/>
-      <a-col flex="1"/>
-    </a-row>
+  <a-layout-footer class="fix-bottom plr-0">
+    <footer-info-box/>
   </a-layout-footer>
 </a-layout>
 <a-modal
@@ -53,12 +47,13 @@ import CompoBox from '../components/CompoBox.vue'
 import OperBox from '../components/OperBox.vue'
 import StructBox from '../components/StructBox.vue'
 import PageCard from '../components/PageCard.vue'
-import OperInfo from '../components/OperInfo.vue'
 import AddCompoForm from '../components/AddCompoForm.vue'
+import FooterInfoBox from '../components/FooterInfoBox.vue'
 import { useStore } from 'vuex'
-import { Compo, Property, CompoType } from '@/common'
+import { Compo, Property, CompoType, waitFor, until } from '@/common'
 import propsRess from '../test_ress/properties.json'
 import { notification } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
 export default defineComponent({
   name: 'MainPanel',
   components: {
@@ -66,17 +61,25 @@ export default defineComponent({
     OperBox,
     StructBox,
     PageCard,
-    OperInfo,
     AddCompoForm,
+    FooterInfoBox
   },
   setup () {
     const store = useStore()
+    const router = useRouter()
+    if (!store.getters.uiFramework || !store.getters.uiLibrary) {
+      router.push({ path: '/create' })
+    }
     const pages = computed(() => store.getters.pages)
     const addCmpVisible = computed(() => store.getters.addCmpActive)
     const addCmpFormRef = ref()
-    const rszObs = new ResizeObserver(() => {
+    const rszObs = new ResizeObserver(async () => {
       for (const page of pages.value) {
-        page.ref.onSizeChanged()
+        const pageRef = await until(() => page.ref)
+        if (!pageRef) {
+          continue
+        }
+        pageRef.onSizeChanged()
       }
     })
 
@@ -85,7 +88,11 @@ export default defineComponent({
       // @_@：测试用
       store.commit('SEL_NODE', 'item001')
 
-      rszObs.observe(document.getElementById('ctrMain') as Element)
+      const el = await waitFor('ctrMain')
+      if (!el) {
+        return
+      }
+      rszObs.observe(el as Element)
     })
     watch(() => store.getters.seledPage, () => {
       const ctrMain = document.getElementById('ctrMain')

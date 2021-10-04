@@ -130,7 +130,7 @@ export default defineComponent({
     })
     watch(() => [
       store.getters.pages.length,
-      store.getters.allCompoNames.length
+      store.getters.compoNames.length
     ], () => {
       cvtPagesToTree()
     })

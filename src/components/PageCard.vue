@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts">
-import { buildStyles, Page, Rect } from '@/common'
+import { buildStyles, Page, Rect, waitFor } from '@/common'
 import { computed, defineComponent, onMounted, reactive } from 'vue'
 import CompoCard from '../components/CompoCard.vue'
 export default defineComponent({
@@ -41,11 +41,13 @@ export default defineComponent({
     const area = reactive(new Rect())
     const rszObs = new ResizeObserver(onSizeChanged)
 
-    onMounted(() => {
+    onMounted(async () => {
       onSizeChanged()
-      rszObs.observe(
-        document.getElementById(props.page.name) as Element
-      )
+      const el = await waitFor(props.page.name)
+      if (!el) {
+        return
+      }
+      rszObs.observe(el as Element)
     })
 
     function onSizeChanged () {

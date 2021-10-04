@@ -18,7 +18,7 @@
       placeholder="选择组件类型"
     >
       <a-select-option
-        v-for="cmpInf in store.getters.allCompoInfos"
+        v-for="cmpInf in store.getters.compoInfos"
         :key="cmpInf.name"
         :value="cmpInf.name"
       >
@@ -82,8 +82,8 @@ export default defineComponent({
     })
 
     function validCompoName (_rule: any, value: string) {
-      if (store.getters.allCompoNames.includes(value)
-      || store.getters.allPageNames.includes(value)) {
+      if (store.getters.compoNames.includes(value)
+      || store.getters.pageNames.includes(value)) {
         return Promise.reject('该名称已被占用')
       } else {
         return Promise.resolve()

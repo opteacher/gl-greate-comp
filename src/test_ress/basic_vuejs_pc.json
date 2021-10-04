@@ -1,0 +1,16 @@
+{
+  "data": [
+    {
+      "name": "Block",
+      "desc": "块",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/5rWLU27so/Grid.svg",
+      "tag": "div"
+    },
+    {
+      "name": "Text",
+      "desc": "文本",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/GOM1KQ24O/Typography.svg",
+      "tag": "p"
+    }
+  ]
+}

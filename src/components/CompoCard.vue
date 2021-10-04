@@ -16,58 +16,76 @@
   @mouseleave="onMouseLeave"
   @mouseup="onMouseUp"
 />
-<keep-alive>
-  <component :is="curTag"
+<keep-alive v-if="compo.tag">
+  <component :is="compo.tag"
     :class="{ 'card-active': isActive }"
-    v-bind="component.toAttributes()"
+    v-bind="compo.toAttributes()"
   >
-    {{component['#content']}}
+    {{compo['#content']}}
   </component>
 </keep-alive>
 </template>
 
 <script lang="ts">
-import { Compo, Point, PosType, Rect } from '@/common'
-import { computed, defineComponent, onMounted, reactive, ref } from 'vue'
+import { Compo, Point, PosType, Rect, until, waitFor } from '@/common'
+import { notification } from 'ant-design-vue'
+import { computed, defineComponent, onMounted, reactive } from 'vue'
 import { useStore } from 'vuex'
-import { loadCompos } from '../common'
-import compoData from '../test_ress/components.json'
-
 interface Mask {
   area: Rect
   position: PosType
 }
 export default defineComponent({
   name: 'ComponentCard',
-  components: loadCompos(),
   props: {
     compo: { type: Compo, required: true },
   },
+  // 无法动态加载UI库组件，现阶段只能全部导入，页面会很大，而且存在tag、css冲突的风险
+  // async created () {
+  //   const store = useStore()
+  //   try {
+  //     const cmpMod = await until(() => {
+  //       return store.getters.cmpModByName(this.$props.compo.ctype)
+  //     })
+  //     if (cmpMod) {
+  //       if (!this.$options.components) {
+  //         this.$options.components = {}
+  //       }
+  //       this.$options.components[cmpMod.tag] = cmpMod.imported
+  //     } else {
+  //       throw new Error(`未找到指定的组件：${this.$props.compo.ctype}`)
+  //     }
+  //   } catch (e) {
+  //     notification.error({
+  //       message: '组件加载错误！',
+  //       description: e.message || JSON.stringify(e),
+  //     })
+  //   }
+  // },
   setup (props) {
     const store = useStore()
-    const component = reactive(props.compo)
     const isActive = computed(() => {
-      return store.getters.seledCompo.name === component.name
+      return store.getters.seledCompo.name === props.compo.name
     })
     const mask = reactive({
       area: new Rect(),
       position: 'absolute'
     } as Mask)
     const mousedown = reactive(new Point(-1, -1))
-    const compoInfo = compoData.data.find(compo => {
-      return compo.name === component.ctype
-    })
-    const curTag = ref(compoInfo?.tag)
     const rszObs = new ResizeObserver(updMask)
 
-    onMounted(() => {
+    onMounted(async () => {
+      const el = await waitFor(props.compo.name)
+      if (!el) {
+        return
+      }
+      rszObs.observe(el as Element)
       updMask()
-      rszObs.observe(document.getElementById(component.name) as Element)
     })
 
     function updMask () {
       const el: HTMLElement | null = document
-        .getElementById(component.name)
+        .getElementById(props.compo.name)
       if (!el) {
         return
       }
@@ -81,21 +99,26 @@ export default defineComponent({
       onMouseEnter()
     }
     function onMouseDown (e: MouseEvent) {
-      mousedown.x = e.clientX - component.position.left[0]
-      mousedown.y = e.clientY - component.position.top[0]
+      mousedown.x = e.clientX - props.compo.position.left[0]
+      mousedown.y = e.clientY - props.compo.position.top[0]
     }
     function onMouseMove (e: MouseEvent) {
       if (document.body.style.cursor === 'default') {
         document.body.style.cursor = 'pointer'
       }
-      if (component.position.position === 'static') {
+      if (props.compo.position.position === 'static') {
         return
       }
       switch (store.getters.curOper) {
       case 'move':
         if (mousedown.isValuable()) {
-          component.position.left[0] = e.clientX - mousedown.x
-          component.position.top[0] = e.clientY - mousedown.y
+          store.commit('SET_PROP_VALUE', [{
+            key: 'position.left',
+            value: e.clientX - mousedown.x
+          }, {
+            key: 'position.top',
+            value: e.clientY - mousedown.y
+          }])
           updMask()
         }
         break
@@ -119,11 +142,9 @@ export default defineComponent({
       updMask()
     }
     return {
-      component,
       isActive,
       mask,
       mousedown,
-      curTag,
 
       onCompoClicked,
       onMouseDown,

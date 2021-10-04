@@ -5,8 +5,10 @@
 </template>
 
 <script lang="ts">
+import { SelUiFwkFormState } from '@/common'
 import { defineComponent } from 'vue'
 import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 import SelUiFwkForm from '../components/SelUiFwkForm.vue'
 export default defineComponent({
   name: 'Create',
@@ -14,9 +16,10 @@ export default defineComponent({
     SelUiFwkForm
   },
   setup () {
+    const store = useStore()
     const router = useRouter()
-    function onSelUiFwkSubmit (formState: any) {
-      console.log(formState)
+    function onSelUiFwkSubmit (formState: SelUiFwkFormState) {
+      store.commit('USE_UI_LIB', formState)
       router.push('/main')
     }
     return {

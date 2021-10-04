@@ -1,14 +1,15 @@
-import { Compo, CompoInfo, CompoType, OperType, Page, StrIterable, Unit } from '@/common'
+import { Compo, CompoInfo, CompoType, copyUiFmwk, OperType, Page, StrIterable, UiFramework, Unit } from '@/common'
 import { createStore } from 'vuex'
 import pagesRess from '../test_ress/pages.json'
-import compoRess from '@/test_ress/components.json'
+import uiInfoRess from '../test_ress/uiFramworks.json'
+import compoRess from '@/test_ress/element-ui-vue_1.1.0-beta.19.json'
+import { message } from 'ant-design-vue'
 
 const dftCompo = new Compo()
 const dftPage = new Page()
 interface SetPropParam {
   key: string, value?: any, unit?: Unit
 }
-
 interface SetAddCmpDlg {
   show: boolean
   cmpTyp?: CompoType
@@ -17,24 +18,45 @@ interface SetAddCmpDlg {
 
 export default createStore({
   state: {
+    uiFrameworks: [] as UiFramework[],
+    selUiFramework: '',
+    selUiLibrary: '',
     pages: [] as Page[],
     components: {} as { [name: string]: Compo },
-    compoStore: [] as CompoInfo[],
+    compoLibrary: [] as CompoInfo[],
     selPage: dftPage,
     selCompo: dftCompo,
     curOper: 'move' as OperType,
     addCompo: { show: false } as SetAddCmpDlg
   },
   mutations: {
+    INIT_UI_LIBS (state) {
+      state.uiFrameworks = uiInfoRess.data.map(uiInfo => copyUiFmwk(uiInfo))
+    },
+    USE_UI_LIB (state, payload: { framework: string, library: string }) {
+      state.selUiFramework = payload.framework
+      state.selUiLibrary = payload.library
+    },
     INIT_PAGES (state) {
-      state.compoStore = compoRess.data.map((compo: any) => {
-        return CompoInfo.copy(compo)
+      state.compoLibrary = compoRess.data.map((compo: any) => {
+        const compoInfo = CompoInfo.copy(compo)
+        // 无法动态加载UI库组件，现阶段只能全部导入，页面会很大，而且存在tag、css冲突的风险
+        // if (compoInfo.lib) {
+        //   compoInfo.imported = defineAsyncComponent(() => {
+        //     console.log(compoInfo.lib)
+        //     return import(`../../lib/node_modules/${compoInfo.lib}`)
+        //   })
+        // }
+        return compoInfo
       })
       state.pages = pagesRess.data.map(page => Page.copy(page))
       const scanCompos = (parent: Compo) => {
+        const cmpMod = state.compoLibrary.find(cmp => {
+          return cmp.name === parent.ctype
+        })
+        parent.tag = cmpMod ? cmpMod.tag : ''
         state.components[parent.name] = parent
         for (const compo of parent.children) {
-          state.components[compo.name] = compo
           if (compo.children.length) {
             scanCompos(compo)
           }
@@ -101,6 +123,10 @@ export default createStore({
       }
     },
     ADD_COMPO (state, payload: Compo) {
+      const cmpMod = state.compoLibrary.find(cmp => {
+        return cmp.name === payload.ctype
+      })
+      payload.tag = cmpMod ? cmpMod.tag : ''
       state.components[payload.name] = payload
       if (state.components[payload.parent]) {
         state.components[payload.parent].children.push(payload)
@@ -153,12 +179,27 @@ export default createStore({
   },
   actions: {
     async initialize (ctx) {
+      message.loading('加载中……')
+      await new Promise(resolve => setTimeout(resolve, 1000))
       ctx.commit('INIT_PAGES')
+      message.destroy()
     }
   },
   getters: {
-    allCompoInfos (state): CompoInfo[] {
-      return state.compoStore
+    uiFrameworks (state): UiFramework[] {
+      return state.uiFrameworks
+    },
+    uiFramework (state) {
+      return state.selUiFramework
+    },
+    uiLibrary (state) {
+      return state.selUiLibrary
+    },
+    cmpModByName: (state) => (name: string): any =>  {
+      return state.compoLibrary.find(cmp => cmp.name === name)
+    },
+    compoInfos (state): CompoInfo[] {
+      return state.compoLibrary
     },
     seledPage (state): Page {
       return state.selPage
@@ -172,10 +213,10 @@ export default createStore({
     pages (state): Page[] {
       return state.pages
     },
-    allPageNames (state): string[] {
+    pageNames (state): string[] {
       return state.pages.map(page => page.name)
     },
-    allCompoNames (state): string[] {
+    compoNames (state): string[] {
       return Object.keys(state.components)
     },
     compoByName: (state) => (name: string): Compo => {

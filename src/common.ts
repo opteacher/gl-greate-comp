@@ -1,60 +1,103 @@
 import { ref, Ref } from 'vue'
-import compoData from './test_ress/components.json'
 
-export const uiFrameworks = {
-  'vuejs': {
-    'title': 'VueJs',
-    'miniapp': [],
-    'mobile': [],
-    'PC': [
-      'ant-design-vue',
-      'element-ui-vue'
-    ]
-  },
-  'react': {
-    'title': 'React',
-    'miniapp': [],
-    'mobile': [],
-    'PC': []
-  }
+export type Terminal = 'PC' | 'mobile' | 'miniapp'
+export interface UiFramework {
+  name: string
+  title?: string
+  platforms: Platform[]
+}
+export interface Platform {
+  target: Terminal
+  libraries: Library[]
+}
+export interface Library {
+  name: string
+  styles?: string // UI库的样式集位置
+  components: string // UI库的组件集位置
 }
 
-export const terminals = [{
-  title: '电脑端',
-  value: 'PC'
-}, {
-  title: '移动端',
-  value: 'mobile'
-}, {
-  title: '小程序端',
-  value: 'miniapp'
-}]
-
+export function copyUiFmwk (src: any, tgt?: UiFramework): UiFramework {
+  tgt = tgt || { name: '', platforms: [] }
+  tgt.name = src.name
+  tgt.title = src.title || ''
+  tgt.platforms = []
+  for (const platform of src.platforms) {
+    tgt.platforms.push({
+      target: platform.target,
+      libraries: platform.libraries.map((lib: any) => {
+        return {
+          name: lib.name,
+          styles: lib.styles || '',
+          components: lib.components || ''
+        }
+      })
+    })
+  }
+  return tgt
+}
 export interface SelUiFwkFormState {
-  terminal: string
+  platform: string
   framework: string
   library: string
 }
 
+export async function waitFor (
+  iden: string, reqFun?: (el: any) => boolean, lpLimit = 500
+) {
+  let ret = null
+  for (let i = 0; i < lpLimit; ++i) {
+    ret = document.getElementById(iden)
+    if (ret) {
+      if (reqFun) {
+        if (reqFun(ret)) {
+          return Promise.resolve(ret)
+        }
+      } else {
+        return Promise.resolve(ret)
+      }
+    }
+    await new Promise(res => setTimeout(res, 200))
+  }
+  return Promise.resolve(ret)
+}
+
+export async function until (reqFun: () => any, lpLimit = 500) {
+  for (let i = 0; i < lpLimit; ++i) {
+    const ret = reqFun()
+    if (ret) {
+      return Promise.resolve(ret)
+    }
+    await new Promise(res => setTimeout(res, 200))
+  }
+  return Promise.reject()
+}
 export class CompoInfo {
   name: string
+  clazz: string
   desc: string
   cover: string
   lib: string
+  tag: string
+  imported: any
 
   constructor () {
     this.name = ''
+    this.clazz = ''
     this.desc = ''
     this.cover = ''
     this.lib = ''
+    this.tag = ''
+    this.imported = null
   }
 
   public static copy (src: any, tgt?: CompoInfo): CompoInfo {
     tgt = tgt || new CompoInfo()
     tgt.name = src.name
-    tgt.desc = src.desc
-    tgt.cover = src.cover
-    tgt.lib = src.lib
+    tgt.clazz = src.clazz || ''
+    tgt.desc = src.desc || ''
+    tgt.cover = src.cover || ''
+    tgt.lib = src.lib || ''
+    tgt.tag = src.tag || ''
     return tgt
   }
 }
@@ -269,16 +312,26 @@ export function buildStyles (styled: StrIterable, ignores: string[] = []): strin
 
 export class Compo extends StrIterable {
   name: string
+  tag: string
   parent: string
   ctype: CompoType
   size: Size
   styles: Styles
   position: Position
   children: Compo[]
+  static cpIgnores: string[] = [
+    'name', 'parent', 'ctype', 'size',
+    'styles', 'position', 'children'
+  ]
+  static attrIgnores: string[] = [
+    'name', 'tag', 'parent', 'ctype', 'size',
+    'position', 'children', 'styles', '#content'
+  ]
 
   constructor () {
     super()
     this.name = ''
+    this.tag = ''
     this.parent = ''
     this.ctype = 'Unknown'
     this.size = new Size()
@@ -306,10 +359,7 @@ export class Compo extends StrIterable {
       style: buildStyles(this)
     }
     for (const [key, value] of Object.entries(this)) {
-      if (key === 'name' || key === 'parent'
-      || key === 'ctype' || key === 'size'
-      || key === 'position' || key === 'children'
-      || key === 'styles' || key === '#content') {
+      if (Compo.attrIgnores.includes(key)) {
         continue
       }
       ret[key] = value
@@ -320,6 +370,7 @@ export class Compo extends StrIterable {
   public static copy (src: any, tgt?: Compo): Compo {
     tgt = tgt || new Compo()
     tgt.name = src.name || ''
+    tgt.tag = src.tag || ''
     tgt.parent = src.parent || ''
     tgt.ctype = src.ctype || 'Unknown'
     if (src.size) {
@@ -337,10 +388,7 @@ export class Compo extends StrIterable {
       })
     }
     for (const [key, value] of Object.entries(src)) {
-      if (key === 'name' || key === 'parent'
-      || key === 'ctype' || key === 'size'
-      || key === 'position' || key === 'children'
-      || key === 'styles') {
+      if (Compo.cpIgnores.includes(key)) {
         continue
       }
       tgt[key] = value
@@ -391,17 +439,6 @@ export class Property {
 }
 
 export type OperType = 'move' | 'resize'
-
-export function loadCompos () {
-  const components: { [tagName: string]: (() => any) } = {}
-  for (const compo of compoData.data) {
-    if (!compo.lib) {
-      continue
-    }
-    components[compo.name] = () => import(compo.lib)
-  }
-  return components
-}
 
 export class Page extends Compo {
   index: number

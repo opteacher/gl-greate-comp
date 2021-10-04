@@ -1,0 +1,55 @@
+{
+  "data": [
+    {
+      "name": "vuejs",
+      "title": "VueJs",
+      "platforms": [
+        {
+          "target": "PC",
+          "libraries": [
+            {
+              "name": "basic",
+              "components": "@/test_ress/basic_vuejs_pc.json"
+            },
+            {
+              "name": "ant-design-vue",
+              "styles": "ant-design-vue/dist/antd.css",
+              "components": "@/test_ress/ant-design-vue_2.2.8.json"
+            },
+            {
+              "name": "element-ui-vue",
+              "styles": "element-plus/dist/index.css",
+              "components": "@/test_ress/element-ui-vue_1.1.0-beta.19.json"
+            }
+          ]
+        },
+        {
+          "target": "mobile",
+          "libraries": []
+        },
+        {
+          "target": "miniapp",
+          "libraries": []
+        }
+      ]
+    },
+    {
+      "name": "react",
+      "title": "React",
+      "platforms": [
+        {
+          "target": "PC",
+          "libraries": []
+        },
+        {
+          "target": "mobile",
+          "libraries": []
+        },
+        {
+          "target": "miniapp",
+          "libraries": []
+        }
+      ]
+    }
+  ]
+}

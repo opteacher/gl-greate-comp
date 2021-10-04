@@ -33,7 +33,7 @@ export default defineComponent({
   name: 'ComponentBox',
   setup () {
     const store = useStore()
-    const components = computed(() => store.getters.allCompoInfos)
+    const components = computed(() => store.getters.compoInfos)
 
     function onAddCompoVisible (cmpName: string) {
       store.commit('SET_ADD_CMP_DLG', {
