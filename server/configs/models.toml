@@ -1,0 +1,4 @@
+version=1
+prefix="gl-create-comp"
+type="mongo"
+sync=false

@@ -69,6 +69,7 @@
           'background-color': prop.value
         }" @click="selClrVisible = true"/>
         <a-modal
+          bodyStyle="padding: 0"
           v-model:visible="selClrVisible"
           title="选择颜色"
           @ok="onSelClrConfirmed(prop)"

@@ -1,7 +1,7 @@
 <template>
 <div class="node-tree">
   <a-tree
-    :tree-data="nodesTree"
+    :tree-data="nodeTree"
     :selected-keys="seledNode"
     :autoExpandParent="false"
     v-model:expandedKeys="expdedNodes"
@@ -39,7 +39,7 @@
 </div>
 <div class="props-form">
   <a-empty
-    v-if="isNoneSeled"
+    v-if="isNoneSeled || designType === 'backend'"
     description="没有组件被选择"
     class="pt-30"
   />
@@ -67,7 +67,7 @@
 import { computed, createVNode, defineComponent, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import Properties from './Properties.vue'
-import { Compo, Property, Page } from '@/common'
+import { Compo, Property, Page, Table, Field } from '@/common'
 import properties from '../test_ress/properties.json'
 import {
   SubnodeOutlined,
@@ -96,15 +96,26 @@ export default defineComponent({
   },
   setup () {
     const store = useStore()
-    const nodesTree = ref([])
+    const nodeTree = ref([])
+    const designType = computed(() => store.getters.designType)
     const seledPage = computed(() => store.getters.seledPage as Page)
     const seledCompo = computed(() => store.getters.seledCompo as Compo)
+    const seledTblName = computed(() => store.getters.selTblName as string)
     const seledNode = computed(() => {
-      return [seledCompo.value.name || seledPage.value.name]
+      if (designType.value === 'frontend') {
+        return [
+          seledCompo.value.name || seledPage.value.name
+        ]
+      } else if (designType.value === 'backend') {
+        return [seledTblName.value]
+      } else {
+        return []
+      }
     })
     const expdedNodes = ref([] as string[])
     const isNoneSeled = computed(() => {
-      return !store.getters.seledCompo.name && !store.getters.seledPage.name
+      return !store.getters.seledCompo.name
+        && !store.getters.seledPage.name
     })
     const bscProps = ref([] as Property[])
     const subProps = ref([] as SubProps[])
@@ -128,11 +139,26 @@ export default defineComponent({
       }
       onSelCompoChanged(seledCompo.value)
     })
+    watch(seledTblName, () => {
+      expdedNodes.value = [seledTblName.value]
+    })
     watch(() => [
+      store.getters.designType,
       store.getters.pages.length,
-      store.getters.compoNames.length
+      store.getters.compoNames.length,
     ], () => {
-      cvtPagesToTree()
+      if (designType.value === 'frontend') {
+        cvtPagesToTree()
+      }
+    })
+    watch(() => [
+      store.getters.designType,
+      store.getters.tableNames.length,
+      store.getters.seledTable?.fields.length
+    ], () => {
+      if (designType.value === 'backend') {
+        cvtTablesToTree()
+      }
     })
 
     function onSelPageChanged () {
@@ -156,7 +182,7 @@ export default defineComponent({
       } while (compo.parent.length)
     }
     function cvtPagesToTree () {
-      nodesTree.value = store.getters.pages.map(function(page: Page) {
+      nodeTree.value = store.getters.pages.map(function(page: Page) {
         const retPg: TreeNode = { title: page.name, key: page.name }
         if(page.children.length) {
           const scanCompos = (compo: Compo) => {
@@ -171,9 +197,28 @@ export default defineComponent({
         return retPg
       })
     }
+    function cvtTablesToTree () {
+      nodeTree.value = store.getters.tables.map(function(table: Table) {
+        const retTbl: TreeNode = { title: table.name, key: table.name }
+        retTbl.children = table.fields.map((field: Field) => {
+          const retFld: TreeNode = { title: field.name, key: field.name }
+          return retFld
+        })
+        return retTbl
+      })
+    }
     function onTreeNodeSelect (seleds: string[], e: { selected: boolean }) {
       if (e.selected) {
-        store.commit('SEL_NODE', seleds[0])
+        let mutKey = ''
+        switch (designType.value) {
+        case 'frontend':
+          mutKey = 'SEL_NODE'
+          break
+        case 'backend':
+          mutKey = 'SEL_TABLE'
+          break
+        }
+        store.commit(mutKey, seleds[0])
       } else {
         store.commit('RST_COMPO')
       }
@@ -249,7 +294,8 @@ export default defineComponent({
       }
     }
     return {
-      nodesTree,
+      designType,
+      nodeTree,
       seledNode,
       expdedNodes,
       isNoneSeled,

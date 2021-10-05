@@ -1,6 +1,6 @@
 <template>
 <a-row type="flex">
-  <a-col flex="300px">
+  <a-col flex="300px" style="line-height: 32px">
     <ul class="list-inline text-center">
       <li class="list-inline-item" v-if="seledObj">
         <b>选中对象</b>：{{seledObj}}
@@ -10,8 +10,17 @@
       </li>
     </ul>
   </a-col>
-  <a-col flex="auto"/>
-  <a-col flex="300px">
+  <a-col flex="auto">
+    <a-radio-group
+      :value="store.getters.designType"
+      button-style="solid"
+      @change="e => { store.commit('SET_DESIGN_TYPE', e.target.value) }"
+    >
+      <a-radio-button value="frontend">前端设计</a-radio-button>
+      <a-radio-button value="backend">后端设计</a-radio-button>
+    </a-radio-group>
+  </a-col>
+  <a-col flex="300px" style="line-height: 32px">
     <ul class="list-inline text-center">
       <li class="list-inline-item" v-if="seledObj">
         <b>UI框架</b>：{{uiFramework}}
@@ -63,6 +72,7 @@ export default defineComponent({
     })
 
     return {
+      store,
       mousePos,
       seledObj,
       uiFramework,

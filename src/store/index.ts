@@ -1,4 +1,16 @@
-import { Compo, CompoInfo, CompoType, copyUiFmwk, OperType, Page, StrIterable, UiFramework, Unit } from '@/common'
+import {
+  Compo,
+  CompoInfo,
+  CompoType,
+  copyUiFmwk,
+  Field,
+  OperType,
+  Page,
+  StrIterable,
+  Table,
+  UiFramework,
+  Unit
+} from '@/common'
 import { createStore } from 'vuex'
 import pagesRess from '../test_ress/pages.json'
 import uiInfoRess from '../test_ress/uiFramworks.json'
@@ -16,8 +28,11 @@ interface SetAddCmpDlg {
   belong?: string
 }
 
+export type DesignType = 'frontend' | 'backend'
+
 export default createStore({
   state: {
+    dsgnType: 'frontend' as DesignType,
     uiFrameworks: [] as UiFramework[],
     selUiFramework: '',
     selUiLibrary: '',
@@ -26,10 +41,15 @@ export default createStore({
     compoLibrary: [] as CompoInfo[],
     selPage: dftPage,
     selCompo: dftCompo,
+    selTable: undefined as (Table | undefined),
+    tables: [] as Table[],
     curOper: 'move' as OperType,
     addCompo: { show: false } as SetAddCmpDlg
   },
   mutations: {
+    SET_DESIGN_TYPE (state, payload: DesignType) {
+      state.dsgnType = payload
+    },
     INIT_UI_LIBS (state) {
       state.uiFrameworks = uiInfoRess.data.map(uiInfo => copyUiFmwk(uiInfo))
     },
@@ -175,6 +195,36 @@ export default createStore({
       } else {
         state.addCompo = payload
       }
+    },
+    SEL_TABLE (state, payload: string) {
+      state.selTable = state.tables
+        .find(table => table.name === payload)
+    },
+    ADD_TABLE (state, payload: any) {
+      state.tables.push(Table.copy(payload))
+      state.selTable = state.tables[state.tables.length - 1]
+    },
+    SAVE_FIELD (state, payload: Field) {
+      if (!state.selTable) {
+        return
+      }
+      if (!state.selTable.fields) {
+        state.selTable.fields = []
+      }
+      if (payload.key === -1) {
+        state.selTable.fields.push(
+          Field.copy(payload)
+        )
+      } else {
+        const idx = state.selTable.fields
+          .findIndex((field: Field) => {
+            return field.key === payload.key
+          })
+        if (idx === -1) {
+          return
+        }
+        state.selTable.fields[idx] = Field.copy(payload)
+      }
     }
   },
   actions: {
@@ -186,6 +236,9 @@ export default createStore({
     }
   },
   getters: {
+    designType (state): DesignType {
+      return state.dsgnType
+    },
     uiFrameworks (state): UiFramework[] {
       return state.uiFrameworks
     },
@@ -230,6 +283,18 @@ export default createStore({
     },
     isCompo: (state) => (name: string): boolean => {
       return name in state.components
+    },
+    tables (state): Table[] {
+      return state.tables
+    },
+    tableNames (state): string[] {
+      return state.tables.map(tbl => tbl.name)
+    },
+    selTblName (state): string {
+      return state.selTable ? state.selTable.name : ''
+    },
+    seledTable (state): (Table | undefined) {
+      return state.selTable
     }
   },
   modules: {

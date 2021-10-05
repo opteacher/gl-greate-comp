@@ -101,7 +101,6 @@ export class CompoInfo {
     return tgt
   }
 }
-
 export class Point {
   x: number
   y: number
@@ -127,7 +126,6 @@ export class Point {
     return tgt
   }
 }
-
 export class Rect {
   left: number
   top: number
@@ -160,7 +158,6 @@ export class Rect {
     return tgt
   }
 }
-
 export class StrIterable {
   [idx: string]: any
 }
@@ -187,7 +184,6 @@ export type NumSize = [number, Unit]
 // export type SizeType = NbSzWithAuto | 'fill-parent' | 'no-wrap'
 
 // export const SpcSzAry = ['auto', 'fill-parent', 'no-wrap']
-
 export class Size extends StrIterable {
   width: NumSize
   height: NumSize
@@ -233,7 +229,6 @@ export class Size extends StrIterable {
 export type PosType = 'static' | 'relative' | 'absolute' | 'fixed'
 
 export type CompoType = 'Input' | 'Button' | 'Unknown'
-
 export class Position extends StrIterable {
   position: PosType
   left: NumSize
@@ -260,7 +255,6 @@ export class Position extends StrIterable {
     return tgt
   }
 }
-
 export class Styles extends StrIterable {
   backgroundColor: string
 
@@ -309,7 +303,6 @@ export function buildStyles (styled: StrIterable, ignores: string[] = []): strin
     mkNumStyle('margin-bottom', styled.size.marginBottom),
   ]).join(';')
 }
-
 export class Compo extends StrIterable {
   name: string
   tag: string
@@ -403,13 +396,11 @@ export type SelOpn = string | { title: string, value: string }
 export type PropType = 'string' | 'number' | 'select' | 'text' | '#content' | 'icon'
 
 export type CmpType = '=' | '!=' | 'in'
-
 export interface Cond {
   key: string
   cmp: CmpType
   val: any
 }
-
 export class Property {
   title: string
   key: string
@@ -439,7 +430,6 @@ export class Property {
 }
 
 export type OperType = 'move' | 'resize'
-
 export class Page extends Compo {
   index: number
   ptype: PageType
@@ -457,6 +447,81 @@ export class Page extends Compo {
     tgt.index = src.index || 0
     tgt.ptype = src.ptype || 'other'
     Compo.copy(src, tgt)
+    return tgt
+  }
+}
+export type FieldType = 'id' | 'string' | 'number' | 'boolean' | 'array'
+
+export const fldTypAry = ['id', 'string', 'number', 'boolean', 'array']
+
+export type FldBldType = 'direct' | 'process'
+
+export type FldFlowType = 'doubly' | 'single'
+
+export const fldBldTypAry = ['direct', 'process']
+export class Field {
+  key: number
+  name: string
+  type: FieldType
+  build: FldBldType
+  source: string
+  bind: string[]
+  flow: FldFlowType
+
+  constructor () {
+    this.key = -1
+    this.name = ''
+    this.type = 'string'
+    this.build = 'direct'
+    // 当build类型为direct时，直接绑定测试数据的某个字段
+    // 为process时表示该字段需要进行一定的操作才能获得，
+    // 可操作的对象即为返回的测试数据
+    this.source = ''
+    this.bind = []
+    this.flow = 'doubly'
+  }
+
+  public reset () {
+    this.key = -1
+    this.name = ''
+    this.type = 'string' as FieldType
+    this.build = 'direct' as FldBldType
+    // 当build类型为direct时，直接绑定测试数据的某个字段
+    // 为process时表示该字段需要进行一定的操作才能获得，
+    // 可操作的对象即为返回的测试数据
+    this.source = ''
+    this.bind = []
+    this.flow = 'doubly'
+  }
+
+  public static copy (src: any, tgt?: Field): Field {
+    tgt = tgt || new Field()
+    tgt.key = src.key || ''
+    tgt.name = src.name || ''
+    tgt.type = src.type || 'string'
+    tgt.build = src.build || 'direct'
+    tgt.source = src.source || ''
+    tgt.bind = src.bind || []
+    tgt.flow = src.flow || 'doubly'
+    return tgt
+  }
+}
+export class Table extends StrIterable {
+  name: string
+  fields: Field[]
+
+  constructor () {
+    super()
+    this.name = ''
+    this.fields = []
+  }
+
+  public static copy (src: any, tgt?: Table): Table {
+    tgt = tgt || new Table()
+    tgt.name = src.name || ''
+    tgt.fields = src.fields ? src.fields.map((field: any) => {
+      return Field.copy(field)
+    }) : []
     return tgt
   }
 }

@@ -12,13 +12,22 @@
       <compo-box/>
     </a-layout-sider>
     <a-layout-content id="ctrMain" style="flex: 1; overflow: scroll">
-      <div id="pnlMain" class="main-container">
+      <div
+        v-if="store.getters.designType === 'frontend'"
+        id="pnlMain" class="main-container"
+      >
         <page-card
           v-for="page in pages"
           :key="page.name"
           :page="page"
           :ref="el => { page.ref = el }"
         />
+      </div>
+      <div
+        v-else-if="store.getters.designType === 'backend'"
+        class="w-100 h-100"
+      >
+        <backend-panel/>
       </div>
     </a-layout-content>
     <a-layout-sider theme="light" :width="300" :style="{
@@ -49,6 +58,7 @@ import StructBox from '../components/StructBox.vue'
 import PageCard from '../components/PageCard.vue'
 import AddCompoForm from '../components/AddCompoForm.vue'
 import FooterInfoBox from '../components/FooterInfoBox.vue'
+import BackendPanel from '../components/BackendPanel.vue'
 import { useStore } from 'vuex'
 import { Compo, Property, CompoType, waitFor, until } from '@/common'
 import propsRess from '../test_ress/properties.json'
@@ -62,14 +72,15 @@ export default defineComponent({
     StructBox,
     PageCard,
     AddCompoForm,
-    FooterInfoBox
+    FooterInfoBox,
+    BackendPanel
   },
   setup () {
     const store = useStore()
-    const router = useRouter()
-    if (!store.getters.uiFramework || !store.getters.uiLibrary) {
-      router.push({ path: '/create' })
-    }
+    // const router = useRouter()
+    // if (!store.getters.uiFramework || !store.getters.uiLibrary) {
+    //   router.push({ path: '/create' })
+    // }
     const pages = computed(() => store.getters.pages)
     const addCmpVisible = computed(() => store.getters.addCmpActive)
     const addCmpFormRef = ref()
@@ -82,6 +93,7 @@ export default defineComponent({
         pageRef.onSizeChanged()
       }
     })
+    const actTab = ref('frontend')
 
     onMounted(async () => {
       await store.dispatch('initialize')
@@ -142,6 +154,7 @@ export default defineComponent({
     return {
       store,
       pages,
+      actTab,
       addCmpVisible,
       addCmpFormRef,
 
@@ -155,7 +168,7 @@ export default defineComponent({
 .body-layout {
   position: fixed;
   top: 117px;
-  bottom: 70px;
+  bottom: 80px;
   left: 0;
   right: 0;
 }
