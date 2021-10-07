@@ -228,7 +228,7 @@ export class Size extends StrIterable {
 
 export type PosType = 'static' | 'relative' | 'absolute' | 'fixed'
 
-export type CompoType = 'Input' | 'Button' | 'Unknown'
+export type CompoType = 'Input' | 'Button' | 'Select' | 'Checkbox' | 'Unknown'
 export class Position extends StrIterable {
   position: PosType
   left: NumSize
@@ -318,7 +318,7 @@ export class Compo extends StrIterable {
   ]
   static attrIgnores: string[] = [
     'name', 'tag', 'parent', 'ctype', 'size',
-    'position', 'children', 'styles', '#content'
+    'position', 'children', 'styles', '#inner'
   ]
 
   constructor () {
@@ -375,11 +375,9 @@ export class Compo extends StrIterable {
     if (src.position) {
       Position.copy(src.position, tgt.position)
     }
-    if (src.children) {
-      tgt.children = src.children.map((subCompo: any) => {
-        return Compo.copy(subCompo)
-      })
-    }
+    tgt.children = src.children ? src.children.map((subCompo: any) => {
+      return Compo.copy(subCompo)
+    }) : []
     for (const [key, value] of Object.entries(src)) {
       if (Compo.cpIgnores.includes(key)) {
         continue
@@ -392,8 +390,8 @@ export class Compo extends StrIterable {
 
 export type SelOpn = string | { title: string, value: string }
 
-// #content: 写在标签内容
-export type PropType = 'string' | 'number' | 'select' | 'text' | '#content' | 'icon'
+// #inner: 写在标签内容
+export type PropType = 'string' | 'number' | 'select' | 'text' | '#inner' | 'icon'
 
 export type CmpType = '=' | '!=' | 'in'
 export interface Cond {
@@ -430,27 +428,88 @@ export class Property {
 }
 
 export type OperType = 'move' | 'resize'
+
+export class ClsProp {
+  key: number
+  name: string
+  type: FieldType
+  required: boolean
+  dftVal?: any
+  disabled?: boolean | ((prop: ClsProp) => boolean)
+
+  constructor () {
+    this.key = -1
+    this.name = ''
+    this.type = 'unknown'
+    this.required = false
+    this.disabled = false
+  }
+
+  public static copy (src: any, tgt?: ClsProp): ClsProp {
+    tgt = tgt || new ClsProp()
+    tgt.key = src.key || -1
+    tgt.name = src.name || ''
+    tgt.type = src.type || 'unknown'
+    tgt.required = typeof src.required !== 'undefined' ? JSON.parse(src.required) : false
+    tgt.dftVal = src.dftVal || null
+    tgt.disabled = typeof src.disabled !== 'undefined' ? JSON.parse(src.disabled) : false
+    return tgt
+  }
+}
+export class Clazz {
+  key: number
+  name: string
+  props: ClsProp[]
+  belong: string
+  copyable: boolean
+
+  constructor() {
+    this.key = -1
+    this.name = ''
+    this.props = []
+    this.belong = ''
+    this.copyable = true
+  }
+
+  public static copy (src: any, tgt?: Clazz): Clazz {
+    tgt = tgt || new Clazz()
+    tgt.key = src.key || -1
+    tgt.name = src.name || ''
+    tgt.belong = src.belong || ''
+    tgt.copyable = src.copyable || true
+    tgt.props = src.props ? src.props.map((prop: any) => ClsProp.copy(prop)) : []
+    return tgt
+  }
+}
 export class Page extends Compo {
   index: number
   ptype: PageType
   ref: Ref
+  classes: Clazz[]
+  params: ClsProp[]
 
   constructor() {
     super()
     this.index = 0
     this.ptype = 'other'
     this.ref = ref()
+    this.classes = []
+    this.params = []
   }
 
   public static copy (src: any, tgt?: Page): Page {
     tgt = tgt || new Page()
+    Compo.copy(src, tgt)
     tgt.index = src.index || 0
     tgt.ptype = src.ptype || 'other'
-    Compo.copy(src, tgt)
+    tgt.classes = src.classes ? src.classes
+      .map((clazz: any) => Clazz.copy(clazz)) : []
+    tgt.params = src.params ? src.params
+      .map((variable: any) => ClsProp.copy(variable)) : []
     return tgt
   }
 }
-export type FieldType = 'id' | 'string' | 'number' | 'boolean' | 'array'
+export type FieldType = 'id' | 'string' | 'number' | 'boolean' | 'array' | 'unknown'
 
 export const fldTypAry = ['id', 'string', 'number', 'boolean', 'array']
 
@@ -471,7 +530,7 @@ export class Field {
   constructor () {
     this.key = -1
     this.name = ''
-    this.type = 'string'
+    this.type = 'unknown'
     this.build = 'direct'
     // 当build类型为direct时，直接绑定测试数据的某个字段
     // 为process时表示该字段需要进行一定的操作才能获得，
@@ -484,7 +543,7 @@ export class Field {
   public reset () {
     this.key = -1
     this.name = ''
-    this.type = 'string' as FieldType
+    this.type = 'unknown' as FieldType
     this.build = 'direct' as FldBldType
     // 当build类型为direct时，直接绑定测试数据的某个字段
     // 为process时表示该字段需要进行一定的操作才能获得，
@@ -496,9 +555,9 @@ export class Field {
 
   public static copy (src: any, tgt?: Field): Field {
     tgt = tgt || new Field()
-    tgt.key = src.key || ''
+    tgt.key = typeof src.key !== 'undefined' ? src.key : -1
     tgt.name = src.name || ''
-    tgt.type = src.type || 'string'
+    tgt.type = src.type || 'unknown'
     tgt.build = src.build || 'direct'
     tgt.source = src.source || ''
     tgt.bind = src.bind || []
@@ -523,5 +582,37 @@ export class Table extends StrIterable {
       return Field.copy(field)
     }) : []
     return tgt
+  }
+}
+export class ObjectMapper {
+  [prop: string]: {
+    label: string
+    type: CompoType
+    rules?: any[],
+    options?: string[] | {
+      title: string, value: any
+    }[] // type = Select
+    chkLabels?: [string, string] // type = Checkbox。0为false，1为true
+  }
+
+  constructor (init?: any) {
+    for (const [key, val] of Object.entries(init)) {
+      const value = val as any
+      this[key] = {
+        label: value.label || '',
+        type: value.type || 'Unknown',
+        rules: value.rules || [],
+        options: value.options ? value.options.map((opn: any) => {
+          if (typeof opn === 'string') {
+            return opn
+          } else {
+            return {
+              title: opn.title, value: opn.value
+            }
+          }
+        }) : [],
+        chkLabels: value.chkLabels || ['', '']
+      }
+    }
   }
 }

@@ -43,7 +43,7 @@ export default defineComponent({
 
     onMounted(async () => {
       onSizeChanged()
-      const el = await waitFor(props.page.name)
+      const el = await waitFor(props.page.name, undefined, 5)
       if (!el) {
         return
       }

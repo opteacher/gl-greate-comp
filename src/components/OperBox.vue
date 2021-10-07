@@ -43,6 +43,20 @@
         </a-button>
       </template>
       <template v-if="store.getters.designType === 'backend'">
+        <a-select
+          v-show="false"
+          style="width: 120px"
+          :value="selPage.name"
+          @change="e => store.commit('SEL_NODE', e)"
+        >
+          <a-select-option
+            v-for="page in pages"
+            :key="page.name"
+            :value="page.name"
+          >
+            {{page.name}}
+          </a-select-option>
+        </a-select>
         <a-button @click="showAddTable = true">
           <PlusOutlined />添加表
         </a-button>
@@ -59,13 +73,14 @@
     />
   </a-col>
 </a-row>
-<a-modal
-  v-model:visible="showAddTable"
+<form-dialog
+  :show="showAddTable"
+  @update:show="showAddTable = $event"
   title="添加表"
-  @ok="onAddTableSubmit"
->
-  <add-table-form ref="addTableRef" :showButtons="false"/>
-</a-modal>
+  :object="dftTable"
+  :mapper="addTableMapper"
+  @submit="onAddTableSubmit"
+/>
 </template>
 
 <script lang="ts">
@@ -79,8 +94,17 @@ import {
   PlusOutlined
 } from '@ant-design/icons-vue'
 import { useStore } from 'vuex'
-import { OperType } from '@/common'
-import AddTableForm from '../components/AddTableForm.vue'
+import { ObjectMapper, OperType, Table } from '@/common'
+import FormDialog from '../components/FormDialog.vue'
+const addTableMapper = new ObjectMapper({
+  name: {
+    label: '表名',
+    type: 'Input',
+    rules: [
+      { required: true, message: '请输入表名！', trigger: 'blur'}
+    ]
+  },
+})
 export default defineComponent({
   name: 'OperationBox',
   components: {
@@ -90,7 +114,7 @@ export default defineComponent({
     BarsOutlined,
     AppstoreOutlined,
     PlusOutlined,
-    AddTableForm
+    FormDialog
   },
   setup () {
     const store = useStore()
@@ -98,8 +122,11 @@ export default defineComponent({
     const schCompo = ref('')
     const displayMod = ref('list')
     const schNode = ref('')
+    const dftTable = new Table()
     const addTableRef = ref()
     const showAddTable = ref(false)
+    const pages = computed(() => store.getters.pages)
+    const selPage = computed(() => store.getters.seledPage)
 
     function onOperBtnClicked (oper: OperType) {
       store.commit('SET_OPER', oper)
@@ -113,15 +140,8 @@ export default defineComponent({
     function onDisplayModSwitch () {
       displayMod.value = displayMod.value === 'list' ? 'grid' : 'list'
     }
-    async function onAddTableSubmit () {
-      try {
-        await addTableRef.value.formRef.validate()
-        store.commit('ADD_TABLE', addTableRef.value.formState)
-        showAddTable.value = false
-      } catch (e) {
-        console.log(e)
-        return
-      }
+    function onAddTableSubmit (e: Table) {
+      store.commit('ADD_TABLE', e)
     }
     return {
       store,
@@ -129,8 +149,12 @@ export default defineComponent({
       schCompo,
       displayMod,
       schNode,
+      dftTable,
       addTableRef,
       showAddTable,
+      addTableMapper,
+      pages,
+      selPage,
 
       onOperBtnClicked,
       onSchCompSubmit,

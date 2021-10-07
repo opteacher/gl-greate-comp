@@ -9,11 +9,12 @@
       'border-right': '1px solid rgb(240, 242, 245)',
       'overflow-y': 'auto'
     }">
-      <compo-box/>
+      <compo-box v-if="dsgnType === 'frontend'"/>
+      <clazz-enum-box v-else-if="dsgnType === 'backend'"/>
     </a-layout-sider>
     <a-layout-content id="ctrMain" style="flex: 1; overflow: scroll">
       <div
-        v-if="store.getters.designType === 'frontend'"
+        v-if="dsgnType === 'frontend'"
         id="pnlMain" class="main-container"
       >
         <page-card
@@ -24,7 +25,7 @@
         />
       </div>
       <div
-        v-else-if="store.getters.designType === 'backend'"
+        v-else-if="dsgnType === 'backend'"
         class="w-100 h-100"
       >
         <backend-panel/>
@@ -59,11 +60,11 @@ import PageCard from '../components/PageCard.vue'
 import AddCompoForm from '../components/AddCompoForm.vue'
 import FooterInfoBox from '../components/FooterInfoBox.vue'
 import BackendPanel from '../components/BackendPanel.vue'
+import ClazzEnumBox from '../components/ClazzEnumBox.vue'
 import { useStore } from 'vuex'
 import { Compo, Property, CompoType, waitFor, until } from '@/common'
 import propsRess from '../test_ress/properties.json'
 import { notification } from 'ant-design-vue'
-import { useRouter } from 'vue-router'
 export default defineComponent({
   name: 'MainPanel',
   components: {
@@ -73,7 +74,8 @@ export default defineComponent({
     PageCard,
     AddCompoForm,
     FooterInfoBox,
-    BackendPanel
+    BackendPanel,
+    ClazzEnumBox
   },
   setup () {
     const store = useStore()
@@ -81,12 +83,13 @@ export default defineComponent({
     // if (!store.getters.uiFramework || !store.getters.uiLibrary) {
     //   router.push({ path: '/create' })
     // }
+    const dsgnType = computed(() => store.getters.designType)
     const pages = computed(() => store.getters.pages)
     const addCmpVisible = computed(() => store.getters.addCmpActive)
     const addCmpFormRef = ref()
     const rszObs = new ResizeObserver(async () => {
       for (const page of pages.value) {
-        const pageRef = await until(() => page.ref)
+        const pageRef = await until(() => page.ref, 5)
         if (!pageRef) {
           continue
         }
@@ -99,8 +102,9 @@ export default defineComponent({
       await store.dispatch('initialize')
       // @_@：测试用
       store.commit('SEL_NODE', 'item001')
+      store.commit('SEL_TABLE', 'table001')
 
-      const el = await waitFor('ctrMain')
+      const el = await waitFor('ctrMain', undefined, 5)
       if (!el) {
         return
       }
@@ -108,7 +112,7 @@ export default defineComponent({
     })
     watch(() => store.getters.seledPage, () => {
       const ctrMain = document.getElementById('ctrMain')
-      if (!ctrMain) {
+      if (!ctrMain || dsgnType.value !== 'frontend') {
         return
       }
       const ctrMainWid = ctrMain.clientWidth || 0
@@ -153,6 +157,7 @@ export default defineComponent({
     }
     return {
       store,
+      dsgnType,
       pages,
       actTab,
       addCmpVisible,

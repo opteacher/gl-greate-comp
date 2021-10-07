@@ -1,6 +1,6 @@
 <template>
 <div class="w-100 h-100 white-bkgd">
-  <template v-if="seledTable">
+  <template v-if="seledTable.name">
     <a-row class="p-10" type="flex" :gutter="8">
       <a-col flex="auto">
         <a-input-group compact>
@@ -25,7 +25,7 @@
         </a-button>
       </a-col>
     </a-row>
-    <a-descriptions
+    <a-descriptions size="small"
       v-if="Object.keys(testData).length"
       class="mb-10" :column="1" bordered
     >
@@ -33,11 +33,11 @@
         v-for="(value, key) in testData"
         :label="key" :key="key"
       >
-        {{value}}&nbsp;[{{typeof value}}]
+        {{typeof value}}
       </a-descriptions-item>
     </a-descriptions>
     <div class="plr-10 mb-10">
-      <a-button @click="addField = true">添加字段</a-button>
+      <a-button @click="addFieldMod = true">添加字段</a-button>
     </div>
     <a-table
       :dataSource="fields"
@@ -45,19 +45,24 @@
       :scroll="{ y: 240 }"
       :pagination="false"
     >
-      <template #name="{ text, index }">
+      <template #name="{ text, index, record }">
         <a-input
-          v-if="index === edtField"
+          v-if="index === edtFieldKey"
           v-model:value="edtFieldState.name"
+          placeholder="输入字段名称"
         />
         <template v-else>
-          {{text}}
+          {{text}} =
+          <a-button size="small"
+            @click="onBindFieldClicked(record)"
+          >{{record.source}}</a-button>
         </template>
       </template>
       <template #type="{ text, index }">
         <a-select
-          v-if="index === edtField"
+          v-if="index === edtFieldKey"
           v-model:value="edtFieldState.type"
+          placeholder="选择字段类型"
           class="w-100"
         >
           <a-select-option
@@ -71,8 +76,9 @@
       </template>
       <template #build="{ text, index }">
         <a-select
-          v-if="index === edtField"
+          v-if="index === edtFieldKey"
           v-model:value="edtFieldState.build"
+          placeholder="选择数据源构建方式"
           class="w-100"
         >
           <a-select-option
@@ -84,18 +90,9 @@
           {{text}}
         </template>
       </template>
-      <template #source="{ text, index }">
-        <a-input
-          v-if="index === edtField"
-          v-model:value="edtFieldState.source"
-        />
-        <template v-else>
-          {{text}}
-        </template>
-      </template>
       <template #bind="{ text, index, record }">
         <a-cascader
-          v-if="index === edtField"
+          v-if="index === edtFieldKey"
           v-model:value="edtFieldState.bind"
           :options="pageEleOpns"
           placeholder="选择绑定页面元素"
@@ -113,25 +110,51 @@
         </template>
       </template>
       <template #operation="{ index, record }">
-        <template v-if="index === edtField">
-          <a-button
-            type="primary" size="small"
-            @click="onSaveFieldSubmit"
-          >保存</a-button>
-          <a-button
-            class="ml-3" size="small"
-            @click="onCclFieldClicked(index)"
-          >取消</a-button>
+        <template v-if="index === edtFieldKey">
+          <ul class="unstyled-list">
+            <li class="mb-3">
+              <a-button
+                type="primary" size="small"
+                @click="onSaveFieldSubmit"
+              >保存</a-button>
+            </li>
+            <li>
+              <a-button size="small"
+                @click="onCclFieldClicked(index)"
+              >取消</a-button>
+            </li>
+          </ul>
         </template>
         <template v-else>
-          <a-button
-            class="mr-3" size="small"
-            @click="onEdtFieldClicked(index, record)"
-          >编辑</a-button>
-          <a-button danger size="small">删除</a-button>
+          <ul class="unstyled-list">
+            <li class="mb-3">
+              <a-button size="small"
+                @click="onEdtFieldClicked(index, record)"
+              >编辑</a-button>
+            </li>
+            <li>
+              <a-popconfirm
+                title="确定删除该字段"
+                @confirm="onDelFieldSubmit(record.key)"
+              >
+                <a-button size="small" danger>删除</a-button>
+              </a-popconfirm>
+            </li>
+          </ul>
         </template>
       </template>
     </a-table>
+    <a-modal
+      v-model:visible="showFieldBind"
+      title="绑定字段到页面元素"
+      @ok="onFldBindSubmit"
+    >
+      <bind-field-form
+        ref="bindFieldForm"
+        v-model:field="edtFieldState"
+        :dataSrcs="Object.keys(testData)"
+      />
+    </a-modal>
   </template>
   <div v-else class="center-container">
     <a-empty description="选择表，再操作"/>
@@ -140,85 +163,86 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, reactive, ref } from 'vue'
+import { computed, ComputedRef, defineComponent, onMounted, reactive, Ref, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import axios from 'axios'
 import { message } from 'ant-design-vue'
-import { Field, fldTypAry, fldBldTypAry, Page } from '@/common'
+import { Field, fldTypAry, fldBldTypAry, Page, Compo, Table } from '@/common'
 import { SwapOutlined, SwapRightOutlined } from '@ant-design/icons-vue'
+import BindFieldForm from '../components/BindFieldForm.vue'
+const columns = [
+  {
+    title: '字段名称',
+    dataIndex: 'name',
+    key: 'name',
+    slots: { customRender: 'name' }
+  },
+  {
+    title: '字段类型',
+    dataIndex: 'type',
+    key: 'type',
+    slots: { customRender: 'type' },
+    width: 150
+  },
+  {
+    title: '生成方式',
+    dataIndex: 'build',
+    key: 'build',
+    slots: { customRender: 'build' },
+    width: 150
+  },
+  {
+    title: '绑定槽',
+    dataIndex: 'bind',
+    key: 'bind',
+    slots: { customRender: 'bind' },
+  },
+  {
+    title: '操作',
+    dataIndex: 'operation',
+    slots: { customRender: 'operation' },
+    width: 80
+  }
+]
 export default defineComponent({
   name: 'BackendPanel',
   components: {
     SwapOutlined,
-    SwapRightOutlined
+    SwapRightOutlined,
+    BindFieldForm
   },
   setup () {
     const store = useStore()
-    const addField = ref(false)
-    const edtField = ref(-1)
-    const edtFieldState = reactive(new Field())
-    const seledTable = computed(() => {
+    const addFieldMod = ref(false)
+    const edtFieldKey = ref(-1)
+    const edtFieldState: Field = reactive(new Field())
+    const seledTable: ComputedRef<Table> = computed(() => {
       return store.getters.seledTable
     })
-    const fields = computed(() => {
-      const ret: Field[] = []
-      if (addField.value) {
-        ret.push(new Field())
-        edtField.value = 0
-      }
-      if (store.getters.seledTable) {
-        ret.push(...store.getters.seledTable.fields)
-      }
-      for (let i = 0; i < ret.length; ++i) {
-        ret[i].key = i
-      }
-      return ret
-    })
+    const fields: Ref<Field[]> = computed(() => seledTable.value.fields)
     const pageEleOpns = computed(() => {
-      return store.getters.pages.map((page: Page) => {
-        return { value: page.name, label: page.name }
-      })
+      return store.getters.pages.map((page: Page) => ({
+        value: page.name, label: page.name,
+        children: page.children.map((compo: Compo) => {
+          return { value: compo.name, label: compo.name }
+        }),
+      }))
     })
-    const columns = [
-      {
-        title: '字段名称',
-        dataIndex: 'name',
-        key: 'name',
-        slots: { customRender: 'name' },
-      },
-      {
-        title: '字段类型',
-        dataIndex: 'type',
-        key: 'type',
-        slots: { customRender: 'type' },
-      },
-      {
-        title: '生成方式',
-        dataIndex: 'build',
-        key: 'build',
-        slots: { customRender: 'build' },
-      },
-      {
-        title: '数据来源',
-        dataIndex: 'source',
-        key: 'source',
-        slots: { customRender: 'source' },
-      },
-      {
-        title: '绑定槽',
-        dataIndex: 'bind',
-        key: 'bind',
-        slots: { customRender: 'bind' },
-      },
-      {
-        title: '操作',
-        dataIndex: 'operation',
-        slots: { customRender: 'operation' },
-      }
-    ]
     const testURL = ref('')
     const testPrefix = ref('')
     const testData = ref({} as {[key: string]: any})
+    const showFieldBind = ref(false)
+    const bindFieldForm = ref()
+
+    watch(() => addFieldMod.value, () => {
+      if (addFieldMod.value) {
+        fields.value.unshift(new Field())
+        edtFieldKey.value = 0
+      } else {
+        fields.value.shift()
+        edtFieldKey.value = -1
+      }
+    })
 
     async function onGetTestClicked () {
       message.loading('加载中……')
@@ -235,27 +259,44 @@ export default defineComponent({
     function onSaveFieldSubmit () {
       store.commit('SAVE_FIELD', edtFieldState)
       edtFieldState.reset()
-      addField.value = false
-      edtField.value = -1
+      addFieldMod.value = false
+      edtFieldKey.value = -1
     }
     function onCclFieldClicked (index: number) {
-      if (index === 0 && addField.value) {
-        addField.value = false
+      if (index === 0 && addFieldMod.value) {
+        addFieldMod.value = false
       }
-      edtField.value = -1
+      edtFieldKey.value = -1
       edtFieldState.reset()
     }
     function onEdtFieldClicked (index: number, record: Field) {
-      edtField.value = index
+      edtFieldKey.value = index
       Field.copy(record, edtFieldState)
     }
     function onFieldFlowChanged (record: Field) {
       record.flow = record.flow === 'doubly' ? 'single' : 'doubly'
       store.commit('SAVE_FIELD', record)
     }
+    function onDelFieldSubmit (key: number) {
+      store.commit('DEL_FIELD', key)
+    }
+    async function onFldBindSubmit () {
+      try {
+        await bindFieldForm.value.formRef.validate()
+        console.log(bindFieldForm.value.formState)
+        edtFieldState.reset()
+        showFieldBind.value = false
+      } catch (e) {
+        console.log(e)
+      }
+    }
+    function onBindFieldClicked (record: Field) {
+      Field.copy(record, edtFieldState)
+      showFieldBind.value = true
+    }
     return {
-      addField,
-      edtField,
+      addFieldMod,
+      edtFieldKey,
       edtFieldState,
       pageEleOpns,
       seledTable,
@@ -266,12 +307,17 @@ export default defineComponent({
       columns,
       fldTypAry,
       fldBldTypAry,
+      showFieldBind,
+      bindFieldForm,
 
       onGetTestClicked,
       onSaveFieldSubmit,
       onCclFieldClicked,
       onEdtFieldClicked,
-      onFieldFlowChanged
+      onDelFieldSubmit,
+      onFieldFlowChanged,
+      onFldBindSubmit,
+      onBindFieldClicked
     }
   }
 })

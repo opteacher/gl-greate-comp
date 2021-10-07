@@ -1,4 +1,6 @@
 import {
+  Clazz,
+  ClsProp,
   Compo,
   CompoInfo,
   CompoType,
@@ -12,13 +14,15 @@ import {
   Unit
 } from '@/common'
 import { createStore } from 'vuex'
-import pagesRess from '../test_ress/pages.json'
+import pageRess from '../test_ress/pages.json'
+import tableRess from '../test_ress/tables.json'
 import uiInfoRess from '../test_ress/uiFramworks.json'
 import compoRess from '@/test_ress/element-ui-vue_1.1.0-beta.19.json'
 import { message } from 'ant-design-vue'
 
 const dftCompo = new Compo()
 const dftPage = new Page()
+const dftTable = new Table()
 interface SetPropParam {
   key: string, value?: any, unit?: Unit
 }
@@ -32,7 +36,7 @@ export type DesignType = 'frontend' | 'backend'
 
 export default createStore({
   state: {
-    dsgnType: 'frontend' as DesignType,
+    dsgnType: 'backend' as DesignType,
     uiFrameworks: [] as UiFramework[],
     selUiFramework: '',
     selUiLibrary: '',
@@ -41,7 +45,7 @@ export default createStore({
     compoLibrary: [] as CompoInfo[],
     selPage: dftPage,
     selCompo: dftCompo,
-    selTable: undefined as (Table | undefined),
+    selTable: dftTable,
     tables: [] as Table[],
     curOper: 'move' as OperType,
     addCompo: { show: false } as SetAddCmpDlg
@@ -69,7 +73,8 @@ export default createStore({
         // }
         return compoInfo
       })
-      state.pages = pagesRess.data.map(page => Page.copy(page))
+      state.pages = pageRess.data.map(page => Page.copy(page))
+      state.tables = tableRess.data.map(table => Table.copy(table))
       const scanCompos = (parent: Compo) => {
         const cmpMod = state.compoLibrary.find(cmp => {
           return cmp.name === parent.ctype
@@ -197,8 +202,9 @@ export default createStore({
       }
     },
     SEL_TABLE (state, payload: string) {
-      state.selTable = state.tables
-        .find(table => table.name === payload)
+      state.selTable = state.tables.find(table => {
+        return table.name === payload
+      }) || dftTable
     },
     ADD_TABLE (state, payload: any) {
       state.tables.push(Table.copy(payload))
@@ -212,9 +218,9 @@ export default createStore({
         state.selTable.fields = []
       }
       if (payload.key === -1) {
-        state.selTable.fields.push(
-          Field.copy(payload)
-        )
+        const newField = Field.copy(payload)
+        newField.key = state.selTable.fields.length
+        state.selTable.fields.push(newField)
       } else {
         const idx = state.selTable.fields
           .findIndex((field: Field) => {
@@ -225,6 +231,44 @@ export default createStore({
         }
         state.selTable.fields[idx] = Field.copy(payload)
       }
+    },
+    DEL_FIELD (state, payload: number) {
+      const fIdx = state.selTable?.fields
+        .findIndex((field: Field) => field.key === payload)
+      if (fIdx !== -1) {
+        state.selTable?.fields.splice(fIdx as number, 1)
+      }
+    },
+    ADD_CLASS (state, payload: Clazz) {
+      const page = state.pages.find((page: Page) => {
+        return page.name === payload.belong
+      })
+      if (!page) {
+        return
+      }
+      const clazz = Clazz.copy(payload)
+      clazz.key = page.classes.length
+      page.classes.push(clazz)
+    },
+    SAVE_CLASS_PROP (state, payload: {
+      clazz: Clazz, prop: ClsProp
+    }) {
+      const page = state.pages.find((page: Page) => {
+        return page.name === payload.clazz.belong
+      })
+      if (!page || payload.clazz.key >= page.classes.length) {
+        return
+      }
+      const props = page.classes[payload.clazz.key].props
+      const prop = ClsProp.copy(payload.prop)
+      if (prop.key === -1) {
+        props.push(prop)
+      } else {
+        props[prop.key] = prop
+      }
+    },
+    SAVE_PARAM (state, payload: ClsProp) {
+      state.selPage.params.push(ClsProp.copy(payload))
     }
   },
   actions: {

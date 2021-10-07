@@ -21,7 +21,7 @@
     :class="{ 'card-active': isActive }"
     v-bind="compo.toAttributes()"
   >
-    {{compo['#content']}}
+    {{compo['#inner']}}
   </component>
 </keep-alive>
 </template>
@@ -75,7 +75,7 @@ export default defineComponent({
     const rszObs = new ResizeObserver(updMask)
 
     onMounted(async () => {
-      const el = await waitFor(props.compo.name)
+      const el = await waitFor(props.compo.name, undefined, 5)
       if (!el) {
         return
       }

@@ -21,6 +21,20 @@
           "placeholder": "请输入",
           "type": "text"
         }
+      ],
+      "classes": [
+        {
+          "name": "test",
+          "belong": "item001",
+          "copyable": true,
+          "props": [
+            {
+              "name": "abcd",
+              "type": "string",
+              "required": true
+            }
+          ]
+        }
       ]
     },
     {

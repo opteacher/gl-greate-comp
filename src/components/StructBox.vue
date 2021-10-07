@@ -8,11 +8,16 @@
     :show-line="true"
     @select="onTreeNodeSelect"
   >
-    <template #title="{ key: nodeKey, title }">
+    <template
+      v-if="designType === 'frontend'"
+      #title="{ key: nodeKey, title }"
+    >
       <a-dropdown :trigger="['contextmenu']">
         <span>{{ title }}</span>
         <template #overlay>
-          <a-menu @click="({ key: menuKey }) => onTreeMenuClick(nodeKey, menuKey)">
+          <a-menu @click="({ key: menuKey }) => {
+            onTreeMenuClick(nodeKey, menuKey)
+          }">
             <a-menu-item key="addChild">
               <template #icon>
                 <SubnodeOutlined />
@@ -38,28 +43,31 @@
   </a-tree>
 </div>
 <div class="props-form">
-  <a-empty
-    v-if="isNoneSeled || designType === 'backend'"
-    description="没有组件被选择"
-    class="pt-30"
-  />
-  <template v-else>
-    <a-collapse v-model:activeKey="actProps">
-      <a-collapse-panel key="basic" header="基本信息">
-        <properties :properties="bscProps"/>
-      </a-collapse-panel>
-      <a-collapse-panel
-        v-for="item in subProps"
-        :key="item.key"
-        :header="item.title"
-      >
-        <properties
-          :prefix="item.key"
-          :properties="item.props"
-        />
-      </a-collapse-panel>
-    </a-collapse>
+  <template v-if="designType === 'frontend'">
+    <a-empty
+      v-if="isNoneSeled"
+      description="没有组件被选择"
+      class="pt-30"
+    />
+    <template v-else>
+      <a-collapse v-model:activeKey="actProps">
+        <a-collapse-panel key="basic" header="基本信息">
+          <properties :properties="bscProps"/>
+        </a-collapse-panel>
+        <a-collapse-panel
+          v-for="item in subProps"
+          :key="item.key"
+          :header="item.title"
+        >
+          <properties
+            :prefix="item.key"
+            :properties="item.props"
+          />
+        </a-collapse-panel>
+      </a-collapse>
+    </template>
   </template>
+  <parameters v-else-if="designType === 'backend'"/>
 </div>
 </template>
 
@@ -67,6 +75,7 @@
 import { computed, createVNode, defineComponent, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import Properties from './Properties.vue'
+import Parameters from './Parameters.vue'
 import { Compo, Property, Page, Table, Field } from '@/common'
 import properties from '../test_ress/properties.json'
 import {
@@ -90,6 +99,7 @@ export default defineComponent({
   name: 'StructBox',
   components: {
     Properties,
+    Parameters,
     SubnodeOutlined,
     SisternodeOutlined,
     DeleteOutlined
