@@ -1,7 +1,7 @@
 <template>
 <a-layout>
   <a-layout-header class="fix-tops">
-    <p style="color: white; margin-bottom: 0">Header</p>
+    <top-menu-box/>
   </a-layout-header>
   <oper-box/>
   <a-layout class="body-layout">
@@ -61,6 +61,7 @@ import AddCompoForm from '../components/AddCompoForm.vue'
 import FooterInfoBox from '../components/FooterInfoBox.vue'
 import BackendPanel from '../components/BackendPanel.vue'
 import ClassEnumBox from '../components/ClassEnumBox.vue'
+import TopMenuBox from '../components/TopMenuBox.vue'
 import { useStore } from 'vuex'
 import { Compo, Property, CompoType, waitFor, until } from '@/common'
 import propsRess from '../test_ress/properties.json'
@@ -75,7 +76,8 @@ export default defineComponent({
     AddCompoForm,
     FooterInfoBox,
     BackendPanel,
-    ClassEnumBox
+    ClassEnumBox,
+    TopMenuBox
   },
   setup () {
     const store = useStore()

@@ -19,6 +19,8 @@
     "esModuleInterop": true,
     // 允许从没有设置默认导出的模块中默认导入
     "allowSyntheticDefaultImports": true,
+    // 允许导入json模块
+    "resolveJsonModule": true,
     // 生成相应的 .map文件
     "sourceMap": false,
     // 解析非相对模块名的基准目录

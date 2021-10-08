@@ -635,11 +635,11 @@ export class DataURL {
     this.prefix = ''
   }
 
-  public static copy (src: any, tgt?: DataURL): DataURL {
+  public static copy (src: any, tgt?: DataURL, force = false): DataURL {
     tgt = tgt || new DataURL()
-    tgt.url = src.url || tgt.url
-    tgt.method = src.method || tgt.method
-    tgt.prefix = src.prefix || tgt.prefix
+    tgt.url = force ? src.url : (src.url || tgt.url)
+    tgt.method = force ? src.method : (src.method || tgt.method)
+    tgt.prefix = force ? src.prefix : (src.prefix || tgt.prefix)
     return tgt
   }
 }

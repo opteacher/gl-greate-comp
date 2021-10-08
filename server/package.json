@@ -9,8 +9,8 @@
   },
   "scripts": {
     "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\" --quiet --fix",
-    "start:dev": "tsc && cd dist && cross-env ENV=dev node app.js",
-    "start:prod": "tsc && cd dist && cross-env ENV=prod node app.js",
+    "start:dev": "tsc && cd dist && cross-env ENV=dev node --experimental-json-modules app.js",
+    "start:prod": "tsc && cd dist && cross-env ENV=prod node --experimental-json-modules app.js",
     "test": "cross-env ENV=dev jest",
     "test-c": "cross-env ENV=dev jest --coverage"
   },
