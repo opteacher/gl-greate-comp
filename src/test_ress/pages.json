@@ -24,7 +24,7 @@
       ],
       "classes": [
         {
-          "name": "test",
+          "name": "Test",
           "belong": "item001",
           "copyable": true,
           "props": [
@@ -35,7 +35,31 @@
             }
           ]
         }
-      ]
+      ],
+      "fields": [
+        {
+          "name": "abcd",
+          "type": "string",
+          "parent": "item001",
+          "build": "direct",
+          "source": "cctv",
+          "bind": ["item001", "input001"],
+          "flow": "doubly"
+        }
+      ],
+      "params": [
+        {
+          "name": "cctv",
+          "type": "number",
+          "parent": "item001",
+          "required": true
+        }
+      ],
+      "dataUrl": {
+        "url": "http://localhost:4000/gl-create-comp/api/v1/test/table",
+        "method": "GET",
+        "prefix": "result"
+      }
     },
     {
       "index": 1,

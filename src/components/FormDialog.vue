@@ -58,7 +58,7 @@
 </template>
 
 <script lang="ts">
-import { ObjectMapper } from '@/common'
+import { Mapper } from '@/common'
 import { defineComponent, reactive, ref } from 'vue'
 export default defineComponent({
   name: 'FormDialog',
@@ -67,7 +67,7 @@ export default defineComponent({
     title: { type: String, default: 'Form Dialog' },
     onSubmit: { type: Function, required: true },
     object: { type: Object, required: true },
-    mapper: { type: ObjectMapper, required: true },
+    mapper: { type: Mapper, required: true },
   },
   emits: [
     'update:show',

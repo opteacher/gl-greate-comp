@@ -1,6 +1,7 @@
 import {
+  basicTypes,
   Clazz,
-  ClsProp,
+  Attr,
   Compo,
   CompoInfo,
   CompoType,
@@ -9,20 +10,18 @@ import {
   OperType,
   Page,
   StrIterable,
-  Table,
   UiFramework,
-  Unit
+  Unit,
+  DataURL
 } from '@/common'
 import { createStore } from 'vuex'
 import pageRess from '../test_ress/pages.json'
-import tableRess from '../test_ress/tables.json'
 import uiInfoRess from '../test_ress/uiFramworks.json'
 import compoRess from '@/test_ress/element-ui-vue_1.1.0-beta.19.json'
 import { message } from 'ant-design-vue'
 
 const dftCompo = new Compo()
 const dftPage = new Page()
-const dftTable = new Table()
 interface SetPropParam {
   key: string, value?: any, unit?: Unit
 }
@@ -45,10 +44,9 @@ export default createStore({
     compoLibrary: [] as CompoInfo[],
     selPage: dftPage,
     selCompo: dftCompo,
-    selTable: dftTable,
-    tables: [] as Table[],
     curOper: 'move' as OperType,
-    addCompo: { show: false } as SetAddCmpDlg
+    addCompo: { show: false } as SetAddCmpDlg,
+    avaTypes: basicTypes
   },
   mutations: {
     SET_DESIGN_TYPE (state, payload: DesignType) {
@@ -74,7 +72,6 @@ export default createStore({
         return compoInfo
       })
       state.pages = pageRess.data.map(page => Page.copy(page))
-      state.tables = tableRess.data.map(table => Table.copy(table))
       const scanCompos = (parent: Compo) => {
         const cmpMod = state.compoLibrary.find(cmp => {
           return cmp.name === parent.ctype
@@ -121,6 +118,10 @@ export default createStore({
       } else {
         state.selCompo = dftCompo
         state.selPage = state.pages.find(pg => pg.name === payload) || dftPage
+        state.avaTypes = [
+          ...basicTypes, ...state.selPage.classes
+            .map((cls: any) => cls.name)
+        ]
       }
     },
     SET_PROP_VALUE (state, payload: SetPropParam | SetPropParam[]) {
@@ -201,42 +202,63 @@ export default createStore({
         state.addCompo = payload
       }
     },
-    SEL_TABLE (state, payload: string) {
-      state.selTable = state.tables.find(table => {
-        return table.name === payload
-      }) || dftTable
-    },
-    ADD_TABLE (state, payload: any) {
-      state.tables.push(Table.copy(payload))
-      state.selTable = state.tables[state.tables.length - 1]
-    },
-    SAVE_FIELD (state, payload: Field) {
-      if (!state.selTable) {
+    SAVE_ATTR (state, payload: {
+      prop: string,
+      entry: Field | Attr,
+      copy: (src: any, tgt?: Field | Attr) => Field | Attr
+    }) {
+      if (!state.selPage.name) {
         return
       }
-      if (!state.selTable.fields) {
-        state.selTable.fields = []
-      }
-      if (payload.key === -1) {
-        const newField = Field.copy(payload)
-        newField.key = state.selTable.fields.length
-        state.selTable.fields.push(newField)
-      } else {
-        const idx = state.selTable.fields
-          .findIndex((field: Field) => {
-            return field.key === payload.key
-          })
-        if (idx === -1) {
+      let props = state.selPage[payload.prop]
+      if (typeof props === 'undefined') {
+        for (const prop of payload.prop.split('.')) {
+          props = props ? props[prop] : state.selPage[prop]
+        }
+        if (typeof props === 'undefined') {
           return
         }
-        state.selTable.fields[idx] = Field.copy(payload)
+      }
+      if (!props.length) {
+        state.selPage[payload.prop] = []
+      }
+      if (payload.entry.key === -1) {
+        const newOne = payload.copy(payload.entry)
+        newOne.key = props.length
+        props.push(newOne)
+      } else {
+        const idx = props.findIndex((item: any) => {
+          return item.key === payload.entry.key
+        })
+        if (idx !== -1) {
+          props[idx] = payload.copy(payload.entry)
+        }
       }
     },
-    DEL_FIELD (state, payload: number) {
-      const fIdx = state.selTable?.fields
-        .findIndex((field: Field) => field.key === payload)
-      if (fIdx !== -1) {
-        state.selTable?.fields.splice(fIdx as number, 1)
+    DEL_ATTR (state, payload: {
+      prop: string,
+      key: number
+    }) {
+      if (!state.selPage.name) {
+        return
+      }
+      let props = state.selPage[payload.prop]
+      if (typeof props === 'undefined') {
+        for (const prop of payload.prop.split('.')) {
+          props = props ? props[prop] : state.selPage[prop]
+        }
+        if (typeof props === 'undefined') {
+          return
+        }
+      }
+      const idx = props.findIndex((item: any) => {
+        return item.key === payload.key
+      })
+      if (idx !== -1) {
+        props.splice(idx, 1)
+      }
+      for (let i = 0; i < props.length; ++i) {
+        props[i].key = i
       }
     },
     ADD_CLASS (state, payload: Clazz) {
@@ -250,25 +272,8 @@ export default createStore({
       clazz.key = page.classes.length
       page.classes.push(clazz)
     },
-    SAVE_CLASS_PROP (state, payload: {
-      clazz: Clazz, prop: ClsProp
-    }) {
-      const page = state.pages.find((page: Page) => {
-        return page.name === payload.clazz.belong
-      })
-      if (!page || payload.clazz.key >= page.classes.length) {
-        return
-      }
-      const props = page.classes[payload.clazz.key].props
-      const prop = ClsProp.copy(payload.prop)
-      if (prop.key === -1) {
-        props.push(prop)
-      } else {
-        props[prop.key] = prop
-      }
-    },
-    SAVE_PARAM (state, payload: ClsProp) {
-      state.selPage.params.push(ClsProp.copy(payload))
+    SET_DATA_URL (state, payload: DataURL) {
+      DataURL.copy(state.selPage.dataUrl, payload)
     }
   },
   actions: {
@@ -328,17 +333,8 @@ export default createStore({
     isCompo: (state) => (name: string): boolean => {
       return name in state.components
     },
-    tables (state): Table[] {
-      return state.tables
-    },
-    tableNames (state): string[] {
-      return state.tables.map(tbl => tbl.name)
-    },
-    selTblName (state): string {
-      return state.selTable ? state.selTable.name : ''
-    },
-    seledTable (state): (Table | undefined) {
-      return state.selTable
+    avaTypes (state): string[] {
+      return state.avaTypes
     }
   },
   modules: {

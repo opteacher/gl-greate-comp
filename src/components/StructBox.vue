@@ -43,31 +43,28 @@
   </a-tree>
 </div>
 <div class="props-form">
-  <template v-if="designType === 'frontend'">
-    <a-empty
-      v-if="isNoneSeled"
-      description="没有组件被选择"
-      class="pt-30"
-    />
-    <template v-else>
-      <a-collapse v-model:activeKey="actProps">
-        <a-collapse-panel key="basic" header="基本信息">
-          <properties :properties="bscProps"/>
-        </a-collapse-panel>
-        <a-collapse-panel
-          v-for="item in subProps"
-          :key="item.key"
-          :header="item.title"
-        >
-          <properties
-            :prefix="item.key"
-            :properties="item.props"
-          />
-        </a-collapse-panel>
-      </a-collapse>
-    </template>
+  <a-empty
+    v-if="isNoneSeled || designType !== 'frontend'"
+    description="没有组件被选择"
+    class="pt-30"
+  />
+  <template v-else>
+    <a-collapse v-model:activeKey="actProps">
+      <a-collapse-panel key="basic" header="基本信息">
+        <properties :properties="bscProps"/>
+      </a-collapse-panel>
+      <a-collapse-panel
+        v-for="item in subProps"
+        :key="item.key"
+        :header="item.title"
+      >
+        <properties
+          :prefix="item.key"
+          :properties="item.props"
+        />
+      </a-collapse-panel>
+    </a-collapse>
   </template>
-  <parameters v-else-if="designType === 'backend'"/>
 </div>
 </template>
 
@@ -75,8 +72,7 @@
 import { computed, createVNode, defineComponent, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import Properties from './Properties.vue'
-import Parameters from './Parameters.vue'
-import { Compo, Property, Page, Table, Field } from '@/common'
+import { Compo, Property, Page, Field } from '@/common'
 import properties from '../test_ress/properties.json'
 import {
   SubnodeOutlined,
@@ -99,7 +95,6 @@ export default defineComponent({
   name: 'StructBox',
   components: {
     Properties,
-    Parameters,
     SubnodeOutlined,
     SisternodeOutlined,
     DeleteOutlined
@@ -153,22 +148,10 @@ export default defineComponent({
       expdedNodes.value = [seledTblName.value]
     })
     watch(() => [
-      store.getters.designType,
       store.getters.pages.length,
       store.getters.compoNames.length,
     ], () => {
-      if (designType.value === 'frontend') {
-        cvtPagesToTree()
-      }
-    })
-    watch(() => [
-      store.getters.designType,
-      store.getters.tableNames.length,
-      store.getters.seledTable?.fields.length
-    ], () => {
-      if (designType.value === 'backend') {
-        cvtTablesToTree()
-      }
+      cvtPagesToTree()
     })
 
     function onSelPageChanged () {
@@ -207,28 +190,9 @@ export default defineComponent({
         return retPg
       })
     }
-    function cvtTablesToTree () {
-      nodeTree.value = store.getters.tables.map(function(table: Table) {
-        const retTbl: TreeNode = { title: table.name, key: table.name }
-        retTbl.children = table.fields.map((field: Field) => {
-          const retFld: TreeNode = { title: field.name, key: field.name }
-          return retFld
-        })
-        return retTbl
-      })
-    }
     function onTreeNodeSelect (seleds: string[], e: { selected: boolean }) {
       if (e.selected) {
-        let mutKey = ''
-        switch (designType.value) {
-        case 'frontend':
-          mutKey = 'SEL_NODE'
-          break
-        case 'backend':
-          mutKey = 'SEL_TABLE'
-          break
-        }
-        store.commit(mutKey, seleds[0])
+        store.commit('SEL_NODE', seleds[0])
       } else {
         store.commit('RST_COMPO')
       }

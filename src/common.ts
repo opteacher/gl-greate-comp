@@ -428,38 +428,56 @@ export class Property {
 }
 
 export type OperType = 'move' | 'resize'
-
-export class ClsProp {
+export class Attr {
   key: number
   name: string
   type: FieldType
+  parent: string
   required: boolean
   dftVal?: any
-  disabled?: boolean | ((prop: ClsProp) => boolean)
+  disabled?: boolean | ((prop: Attr) => boolean)
 
   constructor () {
     this.key = -1
     this.name = ''
-    this.type = 'unknown'
+    this.type = ''
+    this.parent = ''
     this.required = false
+    this.dftVal = ''
     this.disabled = false
   }
 
-  public static copy (src: any, tgt?: ClsProp): ClsProp {
-    tgt = tgt || new ClsProp()
-    tgt.key = src.key || -1
-    tgt.name = src.name || ''
-    tgt.type = src.type || 'unknown'
-    tgt.required = typeof src.required !== 'undefined' ? JSON.parse(src.required) : false
-    tgt.dftVal = src.dftVal || null
-    tgt.disabled = typeof src.disabled !== 'undefined' ? JSON.parse(src.disabled) : false
+  setKey (key: number): Attr {
+    this.key = key
+    return this
+  }
+
+  public static copy (src: any, tgt?: Attr): Attr {
+    tgt = tgt || new Attr()
+    tgt.key = typeof src.key !== 'undefined' ? src.key : tgt.key
+    tgt.name = src.name || tgt.name
+    tgt.type = src.type || tgt.type
+    tgt.parent = src.parent || tgt.parent
+    tgt.required = typeof src.required !== 'undefined' ? JSON.parse(src.required) : tgt.required
+    tgt.dftVal = src.dftVal || tgt.dftVal
+    tgt.disabled = typeof src.disabled !== 'undefined' ? JSON.parse(src.disabled) : tgt.disabled
     return tgt
+  }
+
+  reset () {
+    this.key = -1
+    this.name = ''
+    this.type = ''
+    this.parent = ''
+    this.required = false
+    this.dftVal = ''
+    this.disabled = false
   }
 }
 export class Clazz {
   key: number
   name: string
-  props: ClsProp[]
+  props: Attr[]
   belong: string
   copyable: boolean
 
@@ -471,13 +489,18 @@ export class Clazz {
     this.copyable = true
   }
 
+  setKey (key: number): Clazz {
+    this.key = key
+    return this
+  }
+
   public static copy (src: any, tgt?: Clazz): Clazz {
     tgt = tgt || new Clazz()
     tgt.key = src.key || -1
     tgt.name = src.name || ''
     tgt.belong = src.belong || ''
     tgt.copyable = src.copyable || true
-    tgt.props = src.props ? src.props.map((prop: any) => ClsProp.copy(prop)) : []
+    tgt.props = src.props ? src.props.map((prop: any) => Attr.copy(prop)) : []
     return tgt
   }
 }
@@ -486,7 +509,9 @@ export class Page extends Compo {
   ptype: PageType
   ref: Ref
   classes: Clazz[]
-  params: ClsProp[]
+  params: Attr[] // 等于inputs
+  fields: Field[] // 等于outputs
+  dataUrl: DataURL
 
   constructor() {
     super()
@@ -495,42 +520,45 @@ export class Page extends Compo {
     this.ref = ref()
     this.classes = []
     this.params = []
+    this.fields = []
+    this.dataUrl = new DataURL()
   }
 
   public static copy (src: any, tgt?: Page): Page {
     tgt = tgt || new Page()
     Compo.copy(src, tgt)
-    tgt.index = src.index || 0
-    tgt.ptype = src.ptype || 'other'
-    tgt.classes = src.classes ? src.classes
-      .map((clazz: any) => Clazz.copy(clazz)) : []
-    tgt.params = src.params ? src.params
-      .map((variable: any) => ClsProp.copy(variable)) : []
+    tgt.index = src.index || tgt.index
+    tgt.ptype = src.ptype || tgt.ptype
+    tgt.classes = src.classes ? src.classes.map((clazz: any, key: number) => {
+      return Clazz.copy(clazz).setKey(key)
+    }) : tgt.classes
+    tgt.params = src.params ? src.params.map((param: any, key: number) => {
+      return Attr.copy(param).setKey(key)
+    }) : tgt.params
+    tgt.fields = src.fields ? src.fields.map((field: any, key: number) => {
+      return Field.copy(field).setKey(key)
+    }) : tgt.fields
+    tgt.dataUrl = src.dataUrl || tgt.dataUrl
     return tgt
   }
 }
-export type FieldType = 'id' | 'string' | 'number' | 'boolean' | 'array' | 'unknown'
+export type FieldType = '' | 'string' | 'number' | 'boolean' | 'Array' | 'Object'
 
-export const fldTypAry = ['id', 'string', 'number', 'boolean', 'array']
+export const basicTypes = ['string', 'number', 'boolean', 'Array', 'Object']
 
-export type FldBldType = 'direct' | 'process'
+export type BuildType = 'direct' | 'process'
 
-export type FldFlowType = 'doubly' | 'single'
+export type FlowType = 'doubly' | 'single'
 
-export const fldBldTypAry = ['direct', 'process']
-export class Field {
-  key: number
-  name: string
-  type: FieldType
-  build: FldBldType
+export const buildTypes = ['direct', 'process']
+export class Field extends Attr {
+  build: BuildType
   source: string
   bind: string[]
-  flow: FldFlowType
+  flow: FlowType
 
   constructor () {
-    this.key = -1
-    this.name = ''
-    this.type = 'unknown'
+    super()
     this.build = 'direct'
     // 当build类型为direct时，直接绑定测试数据的某个字段
     // 为process时表示该字段需要进行一定的操作才能获得，
@@ -541,10 +569,8 @@ export class Field {
   }
 
   public reset () {
-    this.key = -1
-    this.name = ''
-    this.type = 'unknown' as FieldType
-    this.build = 'direct' as FldBldType
+    super.reset()
+    this.build = 'direct' as BuildType
     // 当build类型为direct时，直接绑定测试数据的某个字段
     // 为process时表示该字段需要进行一定的操作才能获得，
     // 可操作的对象即为返回的测试数据
@@ -555,9 +581,7 @@ export class Field {
 
   public static copy (src: any, tgt?: Field): Field {
     tgt = tgt || new Field()
-    tgt.key = typeof src.key !== 'undefined' ? src.key : -1
-    tgt.name = src.name || ''
-    tgt.type = src.type || 'unknown'
+    Attr.copy(src, tgt)
     tgt.build = src.build || 'direct'
     tgt.source = src.source || ''
     tgt.bind = src.bind || []
@@ -565,28 +589,9 @@ export class Field {
     return tgt
   }
 }
-export class Table extends StrIterable {
-  name: string
-  fields: Field[]
-
-  constructor () {
-    super()
-    this.name = ''
-    this.fields = []
-  }
-
-  public static copy (src: any, tgt?: Table): Table {
-    tgt = tgt || new Table()
-    tgt.name = src.name || ''
-    tgt.fields = src.fields ? src.fields.map((field: any) => {
-      return Field.copy(field)
-    }) : []
-    return tgt
-  }
-}
-export class ObjectMapper {
+export class Mapper {
   [prop: string]: {
-    label: string
+    label?: string
     type: CompoType
     rules?: any[],
     options?: string[] | {
@@ -614,5 +619,27 @@ export class ObjectMapper {
         chkLabels: value.chkLabels || ['', '']
       }
     }
+  }
+}
+export type Method = 'GET' | 'POST' | 'DELETE' | 'PUT'
+
+export const methods = ['GET', 'POST', 'DELETE', 'PUT']
+export class DataURL {
+  url: string
+  method: Method
+  prefix: string
+
+  constructor () {
+    this.url = ''
+    this.method = 'GET'
+    this.prefix = ''
+  }
+
+  public static copy (src: any, tgt?: DataURL): DataURL {
+    tgt = tgt || new DataURL()
+    tgt.url = src.url || tgt.url
+    tgt.method = src.method || tgt.method
+    tgt.prefix = src.prefix || tgt.prefix
+    return tgt
   }
 }

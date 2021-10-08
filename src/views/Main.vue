@@ -10,7 +10,7 @@
       'overflow-y': 'auto'
     }">
       <compo-box v-if="dsgnType === 'frontend'"/>
-      <clazz-enum-box v-else-if="dsgnType === 'backend'"/>
+      <class-enum-box v-else-if="dsgnType === 'backend'"/>
     </a-layout-sider>
     <a-layout-content id="ctrMain" style="flex: 1; overflow: scroll">
       <div
@@ -60,7 +60,7 @@ import PageCard from '../components/PageCard.vue'
 import AddCompoForm from '../components/AddCompoForm.vue'
 import FooterInfoBox from '../components/FooterInfoBox.vue'
 import BackendPanel from '../components/BackendPanel.vue'
-import ClazzEnumBox from '../components/ClazzEnumBox.vue'
+import ClassEnumBox from '../components/ClassEnumBox.vue'
 import { useStore } from 'vuex'
 import { Compo, Property, CompoType, waitFor, until } from '@/common'
 import propsRess from '../test_ress/properties.json'
@@ -75,7 +75,7 @@ export default defineComponent({
     AddCompoForm,
     FooterInfoBox,
     BackendPanel,
-    ClazzEnumBox
+    ClassEnumBox
   },
   setup () {
     const store = useStore()
@@ -102,7 +102,6 @@ export default defineComponent({
       await store.dispatch('initialize')
       // @_@：测试用
       store.commit('SEL_NODE', 'item001')
-      store.commit('SEL_TABLE', 'table001')
 
       const el = await waitFor('ctrMain', undefined, 5)
       if (!el) {

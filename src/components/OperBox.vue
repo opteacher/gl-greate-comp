@@ -44,7 +44,6 @@
       </template>
       <template v-if="store.getters.designType === 'backend'">
         <a-select
-          v-show="false"
           style="width: 120px"
           :value="selPage.name"
           @change="e => store.commit('SEL_NODE', e)"
@@ -57,9 +56,6 @@
             {{page.name}}
           </a-select-option>
         </a-select>
-        <a-button @click="showAddTable = true">
-          <PlusOutlined />添加表
-        </a-button>
       </template>
     </a-space>
   </a-col>
@@ -73,14 +69,6 @@
     />
   </a-col>
 </a-row>
-<form-dialog
-  :show="showAddTable"
-  @update:show="showAddTable = $event"
-  title="添加表"
-  :object="dftTable"
-  :mapper="addTableMapper"
-  @submit="onAddTableSubmit"
-/>
 </template>
 
 <script lang="ts">
@@ -90,21 +78,10 @@ import {
   GatewayOutlined,
   PushpinOutlined,
   BarsOutlined,
-  AppstoreOutlined,
-  PlusOutlined
+  AppstoreOutlined
 } from '@ant-design/icons-vue'
 import { useStore } from 'vuex'
-import { ObjectMapper, OperType, Table } from '@/common'
-import FormDialog from '../components/FormDialog.vue'
-const addTableMapper = new ObjectMapper({
-  name: {
-    label: '表名',
-    type: 'Input',
-    rules: [
-      { required: true, message: '请输入表名！', trigger: 'blur'}
-    ]
-  },
-})
+import { OperType } from '@/common'
 export default defineComponent({
   name: 'OperationBox',
   components: {
@@ -112,9 +89,7 @@ export default defineComponent({
     GatewayOutlined,
     PushpinOutlined,
     BarsOutlined,
-    AppstoreOutlined,
-    PlusOutlined,
-    FormDialog
+    AppstoreOutlined
   },
   setup () {
     const store = useStore()
@@ -122,9 +97,6 @@ export default defineComponent({
     const schCompo = ref('')
     const displayMod = ref('list')
     const schNode = ref('')
-    const dftTable = new Table()
-    const addTableRef = ref()
-    const showAddTable = ref(false)
     const pages = computed(() => store.getters.pages)
     const selPage = computed(() => store.getters.seledPage)
 
@@ -140,19 +112,12 @@ export default defineComponent({
     function onDisplayModSwitch () {
       displayMod.value = displayMod.value === 'list' ? 'grid' : 'list'
     }
-    function onAddTableSubmit (e: Table) {
-      store.commit('ADD_TABLE', e)
-    }
     return {
       store,
       curOper,
       schCompo,
       displayMod,
       schNode,
-      dftTable,
-      addTableRef,
-      showAddTable,
-      addTableMapper,
       pages,
       selPage,
 
@@ -160,7 +125,6 @@ export default defineComponent({
       onSchCompSubmit,
       onDisplayModSwitch,
       onSchNodeSubmit,
-      onAddTableSubmit,
     }
   }
 })

@@ -1,31 +1,43 @@
 <template>
 <div class="w-100 h-100 white-bkgd">
-  <template v-if="seledTable.name">
+  <template v-if="selPage.name">
     <a-row class="p-10" type="flex" :gutter="8">
       <a-col flex="auto">
         <a-input-group compact>
+          <a-select
+            style="width: 20%"
+            v-model:value="dataUrlState.method"
+          >
+            <a-select-option
+              v-for="method in methods"
+              :key="method"
+              :value="method"
+            >
+              {{method}}
+            </a-select-option>
+          </a-select>
           <a-input
-            style="width: 75%"
+            style="width: 55%"
             placeholder="输入测试链接"
-            v-model:value="testURL"
+            v-model:value="dataUrlState.url"
           />
           <a-input
             style="width: 25%"
             placeholder="输入返回数据的前缀"
-            v-model:value="testPrefix"
+            v-model:value="dataUrlState.prefix"
           />
         </a-input-group>
       </a-col>
       <a-col flex="100px">
         <a-button
           class="w-100" type="primary"
-          @click="onGetTestClicked"
+          @click="onBindDataUrlClicked"
         >
-          获取测试数据
+          绑定数据URL
         </a-button>
       </a-col>
     </a-row>
-    <a-descriptions size="small"
+    <!-- <a-descriptions size="small"
       v-if="Object.keys(testData).length"
       class="mb-10" :column="1" bordered
     >
@@ -35,13 +47,22 @@
       >
         {{typeof value}}
       </a-descriptions-item>
-    </a-descriptions>
-    <div class="plr-10 mb-10">
+    </a-descriptions> -->
+    <edit-table
+      title="参数"
+      :cols="paramCols"
+      :data="params"
+      :dftRecord="dftParam"
+      :dataMapper="paramMapper"
+      @save="onParamSave"
+      @delete="onParamDel"
+    />
+    <div class="p-10">
       <a-button @click="addFieldMod = true">添加字段</a-button>
     </div>
     <a-table
       :dataSource="fields"
-      :columns="columns"
+      :columns="fieldCols"
       :scroll="{ y: 240 }"
       :pagination="false"
     >
@@ -66,7 +87,7 @@
           class="w-100"
         >
           <a-select-option
-            v-for="ftype in fldTypAry"
+            v-for="ftype in avaTypes"
             :key="ftype" :value="ftype"
           >{{ftype}}</a-select-option>
         </a-select>
@@ -82,7 +103,7 @@
           class="w-100"
         >
           <a-select-option
-            v-for="fbuild in fldBldTypAry"
+            v-for="fbuild in buildTypes"
             :key="fbuild" :value="fbuild"
           >{{fbuild}}</a-select-option>
         </a-select>
@@ -144,33 +165,75 @@
         </template>
       </template>
     </a-table>
-    <a-modal
-      v-model:visible="showFieldBind"
+    <form-dialog
+      :show="showFieldBind"
+      @update:show="showFieldBind = $event"
       title="绑定字段到页面元素"
-      @ok="onFldBindSubmit"
-    >
-      <bind-field-form
-        ref="bindFieldForm"
-        v-model:field="edtFieldState"
-        :dataSrcs="Object.keys(testData)"
-      />
-    </a-modal>
+      :object="edtFieldState"
+      :mapper="bindFieldMapper"
+      @submit="onBindFieldSubmit"
+    />
   </template>
   <div v-else class="center-container">
-    <a-empty description="选择表，再操作"/>
+    <a-empty description="未选择页面"/>
   </div>
 </div>
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, reactive, Ref, ref, watch } from 'vue'
+import { computed, defineComponent, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import axios from 'axios'
-import { message } from 'ant-design-vue'
-import { Field, fldTypAry, fldBldTypAry, Page, Compo, Table } from '@/common'
+import { Field, buildTypes, Page, Compo, Mapper, Attr, methods, DataURL } from '@/common'
 import { SwapOutlined, SwapRightOutlined } from '@ant-design/icons-vue'
-import BindFieldForm from '../components/BindFieldForm.vue'
-const columns = [
+import FormDialog from '../components/FormDialog.vue'
+import EditTable from './EditTable.vue'
+import { message } from 'ant-design-vue'
+const paramCols = [
+  {
+    title: '参数名',
+    dataIndex: 'name',
+    key: 'name',
+    slots: { customRender: 'name' }
+  },
+  {
+    title: '参数类型',
+    dataIndex: 'type',
+    key: 'type',
+    slots: { customRender: 'type' }
+  },
+  {
+    title: '必选',
+    dataIndex: 'required',
+    key: 'required',
+    slots: { customRender: 'required' }
+  },
+  {
+    title: '默认值',
+    dataIndex: 'dftVal',
+    key: 'dftVal',
+    slots: { customRender: 'dftVal' }
+  }
+]
+const paramMapper = new Mapper({
+  name: {
+    label: '参数名',
+    type: 'Input',
+  },
+  type: {
+    label: '参数类型',
+    type: 'Select',
+    options: []
+  },
+  required: {
+    label: '必选',
+    type: 'Checkbox'
+  },
+  dftVal: {
+    label: '默认值',
+    type: 'Input'
+  }
+})
+const fieldCols = [
   {
     title: '字段名称',
     dataIndex: 'name',
@@ -192,7 +255,7 @@ const columns = [
     width: 150
   },
   {
-    title: '绑定槽',
+    title: '绑定元素',
     dataIndex: 'bind',
     key: 'bind',
     slots: { customRender: 'bind' },
@@ -204,22 +267,43 @@ const columns = [
     width: 80
   }
 ]
+const bindFieldMapper = new Mapper({
+  name: {
+    label: '字段名',
+    type: 'Input',
+    disabled: true
+  },
+  type: {
+    label: '字段类型',
+    type: 'Input',
+    disabled: true
+  },
+  build: {
+    label: '构建方式',
+    type: 'Select',
+    options: []
+  },
+  source: {
+    label: '数据源',
+    type: 'Select',
+    options: []
+  }
+})
 export default defineComponent({
   name: 'BackendPanel',
   components: {
     SwapOutlined,
     SwapRightOutlined,
-    BindFieldForm
+    FormDialog,
+    EditTable
   },
   setup () {
     const store = useStore()
+    const selPage = computed(() => store.getters.seledPage)
     const addFieldMod = ref(false)
     const edtFieldKey = ref(-1)
     const edtFieldState: Field = reactive(new Field())
-    const seledTable: ComputedRef<Table> = computed(() => {
-      return store.getters.seledTable
-    })
-    const fields: Ref<Field[]> = computed(() => seledTable.value.fields)
+    const fields = computed(() => store.getters.seledPage.fields)
     const pageEleOpns = computed(() => {
       return store.getters.pages.map((page: Page) => ({
         value: page.name, label: page.name,
@@ -228,12 +312,13 @@ export default defineComponent({
         }),
       }))
     })
-    const testURL = ref('')
-    const testPrefix = ref('')
-    const testData = ref({} as {[key: string]: any})
+    const dataUrlState = reactive(new DataURL())
     const showFieldBind = ref(false)
-    const bindFieldForm = ref()
+    const dftParam = new Attr()
+    const params = computed(() => store.getters.seledPage.params)
+    const avaTypes = computed(() => store.getters.avaTypes)
 
+    bindFieldMapper['build'].options = buildTypes
     watch(() => addFieldMod.value, () => {
       if (addFieldMod.value) {
         fields.value.unshift(new Field())
@@ -243,21 +328,23 @@ export default defineComponent({
         edtFieldKey.value = -1
       }
     })
+    watch(() => store.getters.avaTypes, () => {
+      paramMapper['type'].options = store.getters.avaTypes
+    })
+    watch(() => store.getters.seledPage.dataUrl, () => {
+      DataURL.copy(store.getters.seledPage.dataUrl, dataUrlState)
+    })
 
-    async function onGetTestClicked () {
-      message.loading('加载中……')
-      const resp = await axios.get(testURL.value)
-      testData.value = resp.data
-      for (const key of testPrefix.value.split('.')) {
-        if (!key) {
-          break
-        }
-        testData.value = testData.value[key]
-      }
-      message.destroy()
+    function onBindDataUrlClicked () {
+      store.commit('SET_DATA_URL', dataUrlState)
+      message.success('数据连接绑定成功！')
     }
     function onSaveFieldSubmit () {
-      store.commit('SAVE_FIELD', edtFieldState)
+      store.commit('SAVE_ATTR', {
+        prop: 'fields',
+        entry: edtFieldState,
+        copy: Field.copy
+      })
       edtFieldState.reset()
       addFieldMod.value = false
       edtFieldKey.value = -1
@@ -275,49 +362,63 @@ export default defineComponent({
     }
     function onFieldFlowChanged (record: Field) {
       record.flow = record.flow === 'doubly' ? 'single' : 'doubly'
-      store.commit('SAVE_FIELD', record)
+      store.commit('SAVE_ATTR', {
+        prop: 'fields',
+        entry: record,
+        copy: Field.copy
+      })
     }
     function onDelFieldSubmit (key: number) {
-      store.commit('DEL_FIELD', key)
+      store.commit('DEL_ATTR', { key, prop: 'fields' })
     }
-    async function onFldBindSubmit () {
-      try {
-        await bindFieldForm.value.formRef.validate()
-        console.log(bindFieldForm.value.formState)
-        edtFieldState.reset()
-        showFieldBind.value = false
-      } catch (e) {
-        console.log(e)
-      }
+    function onBindFieldSubmit (e: Field) {
+      console.log(e)
     }
     function onBindFieldClicked (record: Field) {
       Field.copy(record, edtFieldState)
       showFieldBind.value = true
     }
+    function onParamSave (param: Attr) {
+      store.commit('SAVE_ATTR', {
+        prop: 'params',
+        entry: param,
+        copy: Attr.copy
+      })
+    }
+    function onParamDel (key: number) {
+      store.commit('DEL_ATTR', {
+        prop: 'params', key
+      })
+    }
     return {
+      selPage,
       addFieldMod,
       edtFieldKey,
       edtFieldState,
       pageEleOpns,
-      seledTable,
-      testURL,
-      testPrefix,
-      testData,
+      methods,
+      dataUrlState,
       fields,
-      columns,
-      fldTypAry,
-      fldBldTypAry,
+      fieldCols,
+      buildTypes,
       showFieldBind,
-      bindFieldForm,
+      bindFieldMapper,
+      dftParam,
+      paramCols,
+      paramMapper,
+      params,
+      avaTypes,
 
-      onGetTestClicked,
+      onBindDataUrlClicked,
       onSaveFieldSubmit,
       onCclFieldClicked,
       onEdtFieldClicked,
       onDelFieldSubmit,
       onFieldFlowChanged,
-      onFldBindSubmit,
-      onBindFieldClicked
+      onBindFieldSubmit,
+      onBindFieldClicked,
+      onParamSave,
+      onParamDel
     }
   }
 })
