@@ -47,6 +47,7 @@ export class CompoInfo {
   lib: string
   tag: string
   imported: any
+  slot: string
 
   constructor () {
     this.name = ''
@@ -56,16 +57,18 @@ export class CompoInfo {
     this.lib = ''
     this.tag = ''
     this.imported = null
+    this.slot = ''
   }
 
   public static copy (src: any, tgt?: CompoInfo): CompoInfo {
     tgt = tgt || new CompoInfo()
     tgt.name = src.name
-    tgt.clazz = src.clazz || ''
-    tgt.desc = src.desc || ''
-    tgt.cover = src.cover || ''
-    tgt.lib = src.lib || ''
-    tgt.tag = src.tag || ''
+    tgt.clazz = src.clazz || tgt.clazz
+    tgt.desc = src.desc || tgt.desc
+    tgt.cover = src.cover || tgt.cover
+    tgt.lib = src.lib || tgt.lib
+    tgt.tag = src.tag || tgt.tag
+    tgt.slot = src.slot || tgt.slot
     return tgt
   }
 }
@@ -330,10 +333,10 @@ export class Compo extends StrIterable {
 
   public static copy (src: any, tgt?: Compo): Compo {
     tgt = tgt || new Compo()
-    tgt.name = src.name || ''
-    tgt.tag = src.tag || ''
-    tgt.parent = src.parent || ''
-    tgt.ctype = src.ctype || 'Unknown'
+    tgt.name = src.name || tgt.name
+    tgt.tag = src.tag || tgt.tag
+    tgt.parent = src.parent || tgt.parent
+    tgt.ctype = src.ctype || tgt.ctype
     if (src.size) {
       Size.copy(src.size, tgt.size)
     }
@@ -422,7 +425,7 @@ export type OperType = 'move' | 'resize'
 export class Attr {
   key: number
   name: string
-  type: FieldType | undefined
+  type: AttrType
   parent: string
   required: boolean
   dftVal?: any
@@ -530,12 +533,12 @@ export class Page extends Compo {
     return tgt
   }
 }
-export type FieldType = 'string' | 'number' | 'boolean' | 'Array' | 'Object'
+export type BasicType = 'string' | 'number' | 'boolean' | 'Array' | 'Object'
 
 export const basicTypes = ['string', 'number', 'boolean', 'Array', 'Object']
 
 export const basicMapper: {
-  [K in FieldType]: string
+  [K in BasicType]: string
 } = {
   'string': 'String',
   'number': 'Number',
@@ -543,6 +546,8 @@ export const basicMapper: {
   'Array': 'Array',
   'Object': 'Object'
 }
+
+export type AttrType = BasicType | string | undefined
 
 export type BuildType = 'direct' | 'process'
 
@@ -645,7 +650,7 @@ export class DataSrc {
   method: Method
   prefix: string
   varName: string
-  varType: FieldType | undefined
+  varType: AttrType
 
   constructor () {
     this.url = ''

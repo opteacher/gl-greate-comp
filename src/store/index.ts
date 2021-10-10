@@ -33,6 +33,16 @@ interface SetAddCmpDlg {
 
 export type DesignType = 'frontend' | 'backend'
 
+function fixCmpByInf (state: any, compo: Compo): Compo {
+  const cmpInf = state.compoLibrary.find((cmp: any) => {
+    return cmp.name === compo.ctype
+  })
+  if (cmpInf && cmpInf.tag) {
+    compo.tag = cmpInf.tag
+  }
+  return compo
+}
+
 export default createStore({
   state: {
     dsgnType: 'backend' as DesignType,
@@ -73,11 +83,7 @@ export default createStore({
       })
       state.pages = pageRess.data.map(page => Page.copy(page))
       const scanCompos = (parent: Compo) => {
-        const cmpMod = state.compoLibrary.find(cmp => {
-          return cmp.name === parent.ctype
-        })
-        parent.tag = cmpMod ? cmpMod.tag : ''
-        state.components[parent.name] = parent
+        state.components[parent.name] = fixCmpByInf(state, parent)
         for (const compo of parent.children) {
           if (compo.children.length) {
             scanCompos(compo)
@@ -149,11 +155,7 @@ export default createStore({
       }
     },
     ADD_COMPO (state, payload: Compo) {
-      const cmpMod = state.compoLibrary.find(cmp => {
-        return cmp.name === payload.ctype
-      })
-      payload.tag = cmpMod ? cmpMod.tag : ''
-      state.components[payload.name] = payload
+      state.components[payload.name] = fixCmpByInf(state, payload)
       if (state.components[payload.parent]) {
         state.components[payload.parent].children.push(payload)
       } else {

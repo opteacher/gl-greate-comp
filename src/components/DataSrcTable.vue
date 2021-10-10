@@ -10,9 +10,15 @@
   </a-row>
   <a-empty description="无数据源"/>
 </div>
-<a-descriptions v-else class="p-10" title="数据源" bordered :column="2">
+<a-descriptions v-else bordered :column="2">
+  <template #title>
+    <h3 class="ml-10 mt-10">数据源</h3>
+  </template>
   <template #extra>
-    <a-button type="primary" @click="onShowDataSrcClicked">修改</a-button>
+    <a-button
+      class="mr-10 mt-10" type="primary"
+      @click="onShowDataSrcClicked"
+    >修改</a-button>
   </template>
   <a-descriptions-item label="链接" :span="2">
     {{dataSrc.url}}

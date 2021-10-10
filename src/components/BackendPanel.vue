@@ -13,8 +13,8 @@
       @delete="onParamDel"
     />
     <edit-table
-      title="字段"
-      description="与页面元素绑定的变量，由页面可用变量直接注入或经过计算后注入。可以看作页面后台的Outputs"
+      title="变量"
+      description="可与页面元素绑定，或作为复杂计算的中间量参与。可以看作页面后台的Outputs"
       :cols="fieldCols"
       :data="fields"
       :dftRecord="dftField"
@@ -22,12 +22,12 @@
       @save="onSaveFieldSubmit"
       @delete="onDelFieldSubmit"
     >
-      <template v-slot:name="{ record }">
+      <template #name="{ record }">
         {{record.name}} = <a-button size="small"
           @click="onBindFieldClicked(record)"
-        >{{record.source}}</a-button>
+        >{{record.source || '点击绑定源'}}</a-button>
       </template>
-      <template v-slot:bind="{ record }">
+      <template #bind="{ record }">
         <a-button size="small"
           @click="onFieldFlowChanged(record)"
         >
@@ -109,24 +109,31 @@ const paramMapper = new Mapper({
 })
 const fieldCols = [
   {
-    title: '字段名称',
+    title: '变量名称',
     dataIndex: 'name',
     key: 'name',
     slots: { customRender: 'name' }
   },
   {
-    title: '字段类型',
+    title: '变量类型',
     dataIndex: 'type',
     key: 'type',
     slots: { customRender: 'type' },
-    width: 150
+    width: 120
+  },
+  {
+    title: '默认值',
+    dataIndex: 'dftVal',
+    key: 'dftVal',
+    slots: { customRender: 'dftVal' },
+    width: 100
   },
   {
     title: '生成方式',
     dataIndex: 'build',
     key: 'build',
     slots: { customRender: 'build' },
-    width: 150
+    width: 120
   },
   {
     title: '绑定元素',
@@ -137,13 +144,17 @@ const fieldCols = [
 ]
 const fieldMapper = new Mapper({
   name: {
-    label: '字段名称',
+    label: '变量名称',
     type: 'Input',
   },
   type: {
-    label: '字段类型',
+    label: '变量类型',
     type: 'Select',
     options: []
+  },
+  dftVal: {
+    label: '默认值',
+    type: 'Input',
   },
   build: {
     label: '生成方式',
@@ -221,17 +232,18 @@ export default defineComponent({
     })
     watch(() => store.getters.avaTypes, () => {
       paramMapper['type'].options = store.getters.avaTypes
-      fieldMapper['type'].options = store.getters.avaTypes
+      fieldMapper['type'].options = [''].concat(store.getters.avaTypes)
     })
     watch(() => [
       store.getters.seledPage.params.length
     ], () => {
-      bindFieldMapper['source'].options = [
+      bindFieldMapper['source'].options = ['',
         ...store.getters.seledPage.params.map((param: Attr) => param.name)
       ]
     })
 
     function onSaveFieldSubmit (entry: Field) {
+      entry.parent = selPage.value.name
       store.commit('SAVE_ATTR', {
         prop: 'fields', entry, copy: Field.copy
       })
@@ -247,8 +259,10 @@ export default defineComponent({
     function onDelFieldSubmit (key: number) {
       store.commit('DEL_ATTR', { key, prop: 'fields' })
     }
-    function onBindFieldSubmit (e: Field) {
-      console.log(e)
+    function onBindFieldSubmit (entry: Field) {
+      store.commit('SAVE_ATTR', {
+        prop: 'fields', entry, copy: Field.copy
+      })
     }
     function onBindFieldClicked (record: Field) {
       Field.copy(record, bindFieldState)
