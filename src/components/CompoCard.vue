@@ -27,8 +27,8 @@
 </template>
 
 <script lang="ts">
-import { Compo, Point, PosType, Rect, until, waitFor } from '@/common'
-import { notification } from 'ant-design-vue'
+import { Compo, Point, PosType, Rect } from '@/common'
+import { waitFor } from '@/utils'
 import { computed, defineComponent, onMounted, reactive } from 'vue'
 import { useStore } from 'vuex'
 interface Mask {

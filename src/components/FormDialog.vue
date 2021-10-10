@@ -12,56 +12,67 @@
     :label-col="{ span: 6 }"
     :wrapper-col="{ span: 18 }"
   >
-    <template v-for="(value, key) in mapper" :key="key">
-      <a-form-item
-        v-if="value.type === 'Input'"
-        :label="value.label"
-        :ref="key" :name="key"
-        :disabled="value.disabled"
-      >
-        <a-input v-model:value="formState[key]"/>
-      </a-form-item>
-      <a-form-item
-        v-else-if="value.type === 'Select'"
-        :label="value.label"
-        :ref="key" :name="key"
-      >
-        <a-select
-          class="w-100"
-          v-model:value="formState[key]"
-        >
-          <a-select-option
-            v-for="item in value.options"
-            :key="item.value || item"
-            :value="item.value || item"
+    <template v-for="(value, key) in formMapper" :key="key">
+      <template v-if="isDisplay(key)">
+        <a-form-item :ref="key" :name="key">
+          <template #label>
+            {{value.label}}&nbsp;
+            <a-tooltip v-if="value.desc">
+              <template #title>{{value.desc}}</template>
+              <InfoCircleOutlined />
+            </a-tooltip>
+          </template>
+          <a-input
+            v-if="value.type === 'Input'"
+            v-model:value="formState[key]"
+            :disabled="value.disabled"
+          />
+          <a-select
+            v-else-if="value.type === 'Select'"
+            class="w-100"
+            v-model:value="formState[key]"
+            :disabled="value.disabled"
           >
-            {{item.title || item}}
-          </a-select-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item
-        v-else-if="value.type === 'Checkbox'"
-        :label="value.label"
-        :ref="key" :name="key"
-      >
-        <a-checkbox :name="key"
-          v-model:checked="formState[key]"
-        >
-          {{formState[key]
-            ? (value.chkLabels[1] || '是')
-            : (value.chkLabels[0] || '否')}}
-        </a-checkbox>
-      </a-form-item>
+            <a-select-option
+              v-for="item in value.options"
+              :key="item.value || item"
+              :value="item.value || item"
+            >
+              {{item.title || item}}
+            </a-select-option>
+          </a-select>
+          <a-checkbox
+            v-else-if="value.type === 'Checkbox'"
+            :name="key"
+            v-model:checked="formState[key]"
+            :disabled="value.disabled"
+          >
+            {{formState[key]
+              ? (value.chkLabels[1] || '是')
+              : (value.chkLabels[0] || '否')}}
+          </a-checkbox>
+          <a-textarea
+            v-else-if="value.type === 'Textarea'"
+            v-model:value="formState[key]"
+            :rows="4"
+            :disabled="value.disabled"
+          />
+        </a-form-item>
+      </template>
     </template>
   </a-form>
 </a-modal>
 </template>
 
 <script lang="ts">
-import { Mapper } from '@/common'
-import { defineComponent, reactive, ref } from 'vue'
+import { Cond, Mapper } from '@/common'
+import { defineComponent, reactive, ref, watch } from 'vue'
+import { InfoCircleOutlined } from '@ant-design/icons-vue'
 export default defineComponent({
   name: 'FormDialog',
+  components: {
+    InfoCircleOutlined
+  },
   props: {
     show: { type: Boolean, required: true },
     title: { type: String, default: 'Form Dialog' },
@@ -81,7 +92,29 @@ export default defineComponent({
         return [entry[0], entry[1].rules]
       })
     )
+    const formMapper = reactive(props.mapper)
 
+    for (const [key, value] of Object.entries(props.mapper)) {
+      if (!value.changes) {
+        continue
+      }
+      for (const chg of value.changes) {
+        watch(() => formState[chg.cond.key], () => {
+          if (chg.cond.isVaild(formState)) {
+            (formMapper[key] as any)[chg.attr.key] = chg.attr.val
+          }
+        })
+      }
+    }
+
+    function isDisplay (key: string): boolean {
+      const display = props.mapper[key].display
+      if (typeof display === 'boolean') {
+        return display as boolean
+      } else {
+        return (display as Cond).isVaild(formState)
+      }
+    }
     async function onOkClick () {
       try {
         await formRef.value.validate()
@@ -95,16 +128,15 @@ export default defineComponent({
     function onCclClick () {
       emit('update:show', false)
     }
-    function createTempVar (key: string) {
-      return
-    }
     return {
       formRef,
       formState,
       formRules,
+      formMapper,
 
       onOkClick,
-      onCclClick
+      onCclClick,
+      isDisplay
     }
   }
 })

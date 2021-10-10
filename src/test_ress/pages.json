@@ -51,14 +51,16 @@
         {
           "name": "cctv",
           "type": "number",
-          "parent": "item001",
+          "parent": "list002",
           "required": true
         }
       ],
-      "dataUrl": {
+      "dataSrc": {
         "url": "http://localhost:4000/gl-create-comp/api/v1/test/table",
         "method": "GET",
-        "prefix": "result"
+        "prefix": "result",
+        "varName": "dcba",
+        "varType": "Object"
       }
     },
     {

@@ -43,28 +43,44 @@
   </a-tree>
 </div>
 <div class="props-form">
-  <a-empty
-    v-if="isNoneSeled || designType !== 'frontend'"
-    description="没有组件被选择"
-    class="pt-30"
-  />
-  <template v-else>
-    <a-collapse v-model:activeKey="actProps">
-      <a-collapse-panel key="basic" header="基本信息">
-        <properties :properties="bscProps"/>
-      </a-collapse-panel>
-      <a-collapse-panel
-        v-for="item in subProps"
-        :key="item.key"
-        :header="item.title"
-      >
-        <properties
-          :prefix="item.key"
-          :properties="item.props"
-        />
-      </a-collapse-panel>
-    </a-collapse>
+  <template v-if="designType === 'frontend'">
+    <a-empty
+      v-if="isNoneSeled"
+      class="pt-30"
+      description="没有组件被选择"
+    />
+    <template v-else>
+      <a-collapse v-model:activeKey="actProps">
+        <a-collapse-panel key="basic" header="基本信息">
+          <properties :properties="bscProps"/>
+        </a-collapse-panel>
+        <a-collapse-panel
+          v-for="item in subProps"
+          :key="item.key"
+          :header="item.title"
+        >
+          <properties
+            :prefix="item.key"
+            :properties="item.props"
+          />
+        </a-collapse-panel>
+      </a-collapse>
+    </template>
   </template>
+  <div v-else-if="designType === 'backend'" class="p-5">
+    <h4>可用变量</h4>
+    <a-table
+      :columns="columns"
+      :dataSource="lclVars"
+      :pagination="false"
+    >
+      <template #source="{ text }">
+        {{text === '#dataSrc' ? '数据源' : (
+          text === seledPage.name ? '定义' : '参数'
+        )}}
+      </template>
+    </a-table>
+  </div>
 </div>
 </template>
 
@@ -72,7 +88,7 @@
 import { computed, createVNode, defineComponent, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import Properties from './Properties.vue'
-import { Compo, Property, Page, Field } from '@/common'
+import { Compo, Property, Page, Attr, Field } from '@/common'
 import properties from '../test_ress/properties.json'
 import {
   SubnodeOutlined,
@@ -91,6 +107,24 @@ interface SubProps {
   key: string
   props: Property[]
 }
+const columns = [
+  {
+    title: '变量名',
+    dataIndex: 'name',
+    key: 'name'
+  },
+  {
+    title: '类型',
+    dataIndex: 'type',
+    key: 'type'
+  },
+  {
+    title: '来源',
+    dataIndex: 'parent',
+    key: 'source',
+    slots: { customRender: 'source' },
+  }
+]
 export default defineComponent({
   name: 'StructBox',
   components: {
@@ -125,6 +159,29 @@ export default defineComponent({
     const bscProps = ref([] as Property[])
     const subProps = ref([] as SubProps[])
     const actProps = ref('basic')
+    const lclVars = computed(() => {
+      const selPage = store.getters.seledPage as Page
+      return [
+        {
+          key: 0,
+          name: selPage.dataSrc.varName,
+          type: selPage.dataSrc.varType,
+          parent: '#dataSrc'
+        },
+        ...selPage.params.map((param: Attr, index: number) => ({
+          key: index + 1,
+          name: param.name,
+          type: param.type,
+          parent: param.parent
+        })),
+        ...selPage.fields.map((field: Field, index: number) => ({
+          key: index + 1 + selPage.params.length,
+          name: field.name,
+          type: field.type,
+          parent: field.parent
+        }))
+      ]
+    })
 
     watch(seledPage, () => {
       onSelPageChanged()
@@ -270,12 +327,15 @@ export default defineComponent({
     return {
       designType,
       nodeTree,
+      seledPage,
       seledNode,
       expdedNodes,
       isNoneSeled,
       bscProps,
       subProps,
       actProps,
+      columns,
+      lclVars,
 
       onTreeNodeSelect,
       onTreeMenuClick

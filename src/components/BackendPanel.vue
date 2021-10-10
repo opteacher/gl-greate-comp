@@ -1,42 +1,7 @@
 <template>
 <div class="w-100 h-100 white-bkgd">
   <template v-if="selPage.name">
-    <a-row class="p-10" type="flex" :gutter="8">
-      <a-col flex="auto">
-        <a-input-group compact>
-          <a-select
-            style="width: 20%"
-            v-model:value="dataUrlState.method"
-          >
-            <a-select-option
-              v-for="method in methods"
-              :key="method"
-              :value="method"
-            >
-              {{method}}
-            </a-select-option>
-          </a-select>
-          <a-input
-            style="width: 55%"
-            placeholder="输入测试链接"
-            v-model:value="dataUrlState.url"
-          />
-          <a-input
-            style="width: 25%"
-            placeholder="输入返回数据的前缀"
-            v-model:value="dataUrlState.prefix"
-          />
-        </a-input-group>
-      </a-col>
-      <a-col flex="100px">
-        <a-button
-          class="w-100" type="primary"
-          @click="onBindDataUrlClicked"
-        >
-          绑定数据URL
-        </a-button>
-      </a-col>
-    </a-row>
+    <data-src-table/>
     <edit-table
       title="参数"
       description="来自外部的参数，一般由父节点给出。可以看作页面后台的Inputs"
@@ -75,8 +40,8 @@
       </template>
     </edit-table>
     <form-dialog
-      :show="showFieldBind"
-      @update:show="showFieldBind = $event"
+      :show="showBindField"
+      @update:show="showBindField = $event"
       title="绑定字段到页面元素"
       :object="bindFieldState"
       :mapper="bindFieldMapper"
@@ -92,11 +57,11 @@
 <script lang="ts">
 import { computed, defineComponent, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import { Field, buildTypes, Page, Compo, Mapper, Attr, methods, DataURL } from '@/common'
+import { Field, buildTypes, Page, Compo, Mapper, Attr } from '@/common'
 import { SwapOutlined, SwapRightOutlined } from '@ant-design/icons-vue'
 import FormDialog from '../components/FormDialog.vue'
 import EditTable from './EditTable.vue'
-import { message } from 'ant-design-vue'
+import DataSrcTable from '../components/DataSrcTable.vue'
 const paramCols = [
   {
     title: '参数名',
@@ -183,7 +148,7 @@ const fieldMapper = new Mapper({
   build: {
     label: '生成方式',
     type: 'Select',
-    options: []
+    options: buildTypes
   },
   bind: {
     label: '绑定元素',
@@ -205,12 +170,23 @@ const bindFieldMapper = new Mapper({
   build: {
     label: '构建方式',
     type: 'Select',
-    options: []
+    options: buildTypes
   },
   source: {
     label: '数据源',
+    desc: '参数以#开头，本地变量以$开头',
     type: 'Select',
-    options: []
+    options: [],
+    changes: [
+      {
+        cond: { key: 'build', val: 'direct' },
+        attr: { key: 'type', val: 'Select' }
+      },
+      {
+        cond: { key: 'build', val: 'process' },
+        attr: { key: 'type', val: 'Textarea' }
+      }
+    ]
   }
 })
 export default defineComponent({
@@ -219,22 +195,19 @@ export default defineComponent({
     SwapOutlined,
     SwapRightOutlined,
     FormDialog,
-    EditTable
+    EditTable,
+    DataSrcTable,
   },
   setup () {
     const store = useStore()
     const selPage = computed(() => store.getters.seledPage)
-    const dftField = new Field()
-    const fields = computed(() => store.getters.seledPage.fields)
-    const dataUrlState = reactive(new DataURL())
-    const showFieldBind = ref(false)
-    const bindFieldState = reactive(new Field())
     const dftParam = new Attr()
     const params = computed(() => store.getters.seledPage.params)
-    const avaTypes = computed(() => store.getters.avaTypes)
+    const dftField = new Field()
+    const fields = computed(() => store.getters.seledPage.fields)
+    const showBindField = ref(false)
+    const bindFieldState = reactive(new Field())
 
-    bindFieldMapper['build'].options = buildTypes
-    fieldMapper['build'].options = buildTypes
     watch(() => [
       store.getters.pages.length,
       store.getters.compoNames.length
@@ -250,14 +223,14 @@ export default defineComponent({
       paramMapper['type'].options = store.getters.avaTypes
       fieldMapper['type'].options = store.getters.avaTypes
     })
-    watch(() => store.getters.seledPage, () => {
-      DataURL.copy(store.getters.seledPage.dataUrl, dataUrlState, true)
+    watch(() => [
+      store.getters.seledPage.params.length
+    ], () => {
+      bindFieldMapper['source'].options = [
+        ...store.getters.seledPage.params.map((param: Attr) => param.name)
+      ]
     })
 
-    function onBindDataUrlClicked () {
-      store.commit('SET_DATA_URL', dataUrlState)
-      message.success('数据连接绑定成功！')
-    }
     function onSaveFieldSubmit (entry: Field) {
       store.commit('SAVE_ATTR', {
         prop: 'fields', entry, copy: Field.copy
@@ -279,7 +252,7 @@ export default defineComponent({
     }
     function onBindFieldClicked (record: Field) {
       Field.copy(record, bindFieldState)
-      showFieldBind.value = true
+      showBindField.value = true
     }
     function onParamSave (param: Attr) {
       store.commit('SAVE_ATTR', {
@@ -295,23 +268,19 @@ export default defineComponent({
     }
     return {
       selPage,
-      methods,
-      dataUrlState,
       dftField,
       fields,
       fieldCols,
       fieldMapper,
       bindFieldState,
       buildTypes,
-      showFieldBind,
+      showBindField,
       bindFieldMapper,
       dftParam,
       paramCols,
       paramMapper,
       params,
-      avaTypes,
 
-      onBindDataUrlClicked,
       onSaveFieldSubmit,
       onDelFieldSubmit,
       onFieldFlowChanged,

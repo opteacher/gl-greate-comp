@@ -1,8 +1,11 @@
 <template>
+<div style="float: left; width: 250px; height: 64px">
+</div>
 <a-menu
   theme="dark"
   mode="horizontal"
   v-model:selectedKeys="selKey"
+  :style="{ lineHeight: '64px' }"
   @click="onMenuItemClicked"
 >
   <a-sub-menu title="项目">
@@ -20,6 +23,7 @@
 import { defineComponent, ref } from 'vue'
 import axios from 'axios'
 import { useStore } from 'vuex'
+import { message } from 'ant-design-vue'
 export default defineComponent({
   name: 'TopMenuBox',
   setup () {
@@ -29,9 +33,11 @@ export default defineComponent({
     async function onMenuItemClicked ({ key }: { key: string }) {
       switch (key) {
       case 'generate:fast':
+        message.loading('加载中……')
         await axios.post('http://localhost:4000/gl-create-comp/api/v1/generate/fast', {
           pages: store.getters.pages
         })
+        message.destroy()
         break
       }
     }

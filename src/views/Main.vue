@@ -21,7 +21,7 @@
           v-for="page in pages"
           :key="page.name"
           :page="page"
-          :ref="el => { page.ref = el }"
+          :ref="el => { pgRefs[page.name] = el }"
         />
       </div>
       <div
@@ -52,7 +52,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, ref, toRaw, watch } from 'vue'
+import { computed, defineComponent, onMounted, Ref, ref, toRaw, watch } from 'vue'
 import CompoBox from '../components/CompoBox.vue'
 import OperBox from '../components/OperBox.vue'
 import StructBox from '../components/StructBox.vue'
@@ -63,7 +63,8 @@ import BackendPanel from '../components/BackendPanel.vue'
 import ClassEnumBox from '../components/ClassEnumBox.vue'
 import TopMenuBox from '../components/TopMenuBox.vue'
 import { useStore } from 'vuex'
-import { Compo, Property, CompoType, waitFor, until } from '@/common'
+import { Compo, Property, CompoType } from '@/common'
+import { waitFor, until } from '@/utils'
 import propsRess from '../test_ress/properties.json'
 import { notification } from 'ant-design-vue'
 export default defineComponent({
@@ -87,12 +88,13 @@ export default defineComponent({
     // }
     const dsgnType = computed(() => store.getters.designType)
     const pages = computed(() => store.getters.pages)
+    const pgRefs = {} as { [pgName: string]: Ref }
     const addCmpVisible = computed(() => store.getters.addCmpActive)
     const addCmpFormRef = ref()
     const rszObs = new ResizeObserver(async () => {
       for (const page of pages.value) {
-        const pageRef = await until(() => page.ref, 5)
-        if (!pageRef) {
+        const pageRef = await until(() => pgRefs[page.name], 5)
+        if (!pageRef || !pageRef.onSizeChanged) {
           continue
         }
         pageRef.onSizeChanged()
@@ -123,9 +125,13 @@ export default defineComponent({
         if (Math.abs(scrollX - ctrMain.scrollLeft) <= Math.abs(step)) {
           clearInterval(h)
         }
-        console.log('TTTTTTTTTTTTTTTTT')
         ctrMain.scrollLeft += step
       }, 10)
+    })
+    watch(() => store.getters.pages.length, () => {
+      for(const page of store.getters.pages) {
+        pgRefs[page.name] = ref()
+      }
     })
 
     async function onAddCmpSubmit () {
@@ -160,6 +166,7 @@ export default defineComponent({
       store,
       dsgnType,
       pages,
+      pgRefs,
       actTab,
       addCmpVisible,
       addCmpFormRef,

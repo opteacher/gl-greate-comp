@@ -1,6 +1,6 @@
 <template>
 <a-space class="p-10">
-  <a-button @click="addMod = true">添加{{title}}</a-button>
+  <a-button type="primary" @click="addMod = true">添加{{title}}</a-button>
   <template v-if="description">
     <InfoCircleOutlined style="color: #1890ff"/>
     <p class="mb-0">{{description}}</p>
@@ -60,7 +60,7 @@
         <slot :name="key" v-bind="{ record }"/>
       </template>
       <template v-else>
-        {{record[index]
+        {{record[key]
           ? (value.chkLabels[1] || '是')
           : (value.chkLabels[0] || '否')}}
       </template>

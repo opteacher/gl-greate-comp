@@ -18,7 +18,8 @@
 </template>
 
 <script lang="ts">
-import { buildStyles, Page, Rect, waitFor } from '@/common'
+import { buildStyles, Page, Rect } from '@/common'
+import { waitFor } from '@/utils'
 import { computed, defineComponent, onMounted, reactive } from 'vue'
 import CompoCard from '../components/CompoCard.vue'
 export default defineComponent({

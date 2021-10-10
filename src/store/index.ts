@@ -12,7 +12,7 @@ import {
   StrIterable,
   UiFramework,
   Unit,
-  DataURL
+  DataSrc
 } from '@/common'
 import { createStore } from 'vuex'
 import pageRess from '../test_ress/pages.json'
@@ -272,8 +272,8 @@ export default createStore({
       clazz.key = page.classes.length
       page.classes.push(clazz)
     },
-    SET_DATA_URL (state, payload: DataURL) {
-      DataURL.copy(state.selPage.dataUrl, payload)
+    SET_DATA_SRC (state, payload: DataSrc) {
+      DataSrc.copy(payload, state.selPage.dataSrc)
     }
   },
   actions: {
