@@ -20,6 +20,12 @@
           "ctype": "Input",
           "placeholder": "请输入",
           "type": "text"
+        },
+        {
+          "name": "block001",
+          "parent": "item001",
+          "ctype": "Block",
+          "#inner": "内容"
         }
       ],
       "classes": [

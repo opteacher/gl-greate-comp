@@ -9,8 +9,8 @@
       'border-right': '1px solid rgb(240, 242, 245)',
       'overflow-y': 'auto'
     }">
-      <compo-box v-if="dsgnType === 'frontend'"/>
-      <class-enum-box v-else-if="dsgnType === 'backend'"/>
+      <compo-box v-if="dsgnType === 'frontend'" @addCompo="onAddCmpOfTypeClicked"/>
+      <ipt-pams-box v-else-if="dsgnType === 'backend'"/>
     </a-layout-sider>
     <a-layout-content id="ctrMain" style="flex: 1; overflow: scroll">
       <div
@@ -34,51 +34,88 @@
     <a-layout-sider theme="light" :width="300" :style="{
       'border-left': '1px solid rgb(240, 242, 245)'
     }">
-      <struct-box/>
+      <props-box v-if="dsgnType === 'frontend'" @addCompo="onAddCmpOfParentClicked"/>
+      <exp-vars-box v-else-if="dsgnType === 'backend'"/>
     </a-layout-sider>
   </a-layout>
   <a-layout-footer class="fix-bottom plr-0">
     <footer-info-box/>
   </a-layout-footer>
 </a-layout>
-<a-modal
-  :visible="addCmpVisible"
-  title="指定组件添加的页面"
-  @ok="onAddCmpSubmit"
-  @cancel="store.commit('SET_ADD_CMP_DLG', false)"
->
-  <add-compo-form ref="addCmpFormRef"/>
-</a-modal>
+<form-dialog
+  :show="showAddCmp"
+  @update:show="showAddCmp = $event"
+  title="添加组件"
+  :mapper="addCmpMapper"
+  :object="addCmpForm"
+  @submit="onAddCmpSubmit"
+/>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, Ref, ref, toRaw, watch } from 'vue'
+import { computed, defineComponent, onMounted, Ref, ref, watch } from 'vue'
 import CompoBox from '../components/CompoBox.vue'
 import OperBox from '../components/OperBox.vue'
-import StructBox from '../components/StructBox.vue'
+import PropsBox from '../components/PropsBox.vue'
 import PageCard from '../components/PageCard.vue'
-import AddCompoForm from '../components/AddCompoForm.vue'
 import FooterInfoBox from '../components/FooterInfoBox.vue'
 import BackendPanel from '../components/BackendPanel.vue'
-import ClassEnumBox from '../components/ClassEnumBox.vue'
 import TopMenuBox from '../components/TopMenuBox.vue'
+import FormDialog from '../components/FormDialog.vue'
+import ExpVarsBox from '../components/ExpVarsBox.vue'
+import IptPamsBox from '../components/IptPamsBox.vue'
 import { useStore } from 'vuex'
-import { Compo, Property, CompoType } from '@/common'
 import { waitFor, until } from '@/utils'
-import propsRess from '../test_ress/properties.json'
-import { notification } from 'ant-design-vue'
+import { Compo, CompoInfo, CompoType, Mapper } from '@/common'
+const addCmpMapper = new Mapper({
+  name: {
+    label: '组件名称',
+    type: 'Input',
+    rules: [
+      { required: true, message: '请输入组件名称！', trigger: 'blur' }
+    ]
+  },
+  gptp: {
+    label: '组件类型',
+    type: 'Cascader',
+    options: [],
+    rules: [
+      { type: 'array', required: true, message: '请选择组件类型！', trigger: 'change' }
+    ]
+  },
+  parent: {
+    label: '加入的页面',
+    type: 'Select',
+    options: [],
+    rules: [
+      { required: true, message: '请选择组件父节点！', trigger: 'change' }
+    ]
+  }
+})
+class AddCmpForm {
+  name: string
+  gptp: string[]
+  parent: string
+
+  constructor () {
+    this.name = ''
+    this.gptp = []
+    this.parent = ''
+  }
+}
 export default defineComponent({
   name: 'MainPanel',
   components: {
     CompoBox,
     OperBox,
-    StructBox,
+    PropsBox,
     PageCard,
-    AddCompoForm,
     FooterInfoBox,
     BackendPanel,
-    ClassEnumBox,
-    TopMenuBox
+    TopMenuBox,
+    FormDialog,
+    ExpVarsBox,
+    IptPamsBox
   },
   setup () {
     const store = useStore()
@@ -89,8 +126,6 @@ export default defineComponent({
     const dsgnType = computed(() => store.getters.designType)
     const pages = computed(() => store.getters.pages)
     const pgRefs = {} as { [pgName: string]: Ref }
-    const addCmpVisible = computed(() => store.getters.addCmpActive)
-    const addCmpFormRef = ref()
     const rszObs = new ResizeObserver(async () => {
       for (const page of pages.value) {
         const pageRef = await until(() => pgRefs[page.name], 5)
@@ -101,6 +136,8 @@ export default defineComponent({
       }
     })
     const actTab = ref('frontend')
+    const showAddCmp = ref(false)
+    const addCmpForm = new AddCmpForm()
 
     onMounted(async () => {
       await store.dispatch('initialize')
@@ -132,35 +169,50 @@ export default defineComponent({
       for(const page of store.getters.pages) {
         pgRefs[page.name] = ref()
       }
+      addCmpMapper['parent'].options = store.getters.pages
+        .map((page: any) => page.name)
     })
-
-    async function onAddCmpSubmit () {
-      try {
-        await addCmpFormRef.value.formRef.validate()
-        const formState = toRaw(addCmpFormRef.value.formState)
-
-        const compo = new Compo()
-        compo.name = formState.name
-        compo.parent = formState.parent
-        for (const prop of (propsRess.data[formState.type as CompoType] as any)
-          .map((item: any) => Property.copy(item))
-        ) {
-          if (prop.key === 'name' || prop.key === 'parent') {
-            continue
-          }
-          if (prop.value) {
-            compo[prop.key] = prop.value
-          }
+    addCmpMapper['name'].rules?.push({
+      validator: (_rule: any, value: string) => {
+        if (store.getters.compoNames.includes(value)
+        || store.getters.pageNames.includes(value)) {
+          return Promise.reject('该名称已被占用')
+        } else {
+          return Promise.resolve()
         }
-        store.commit('ADD_COMPO', compo)
-        addCmpFormRef.value.formRef.resetFields()
-        store.commit('SET_ADD_CMP_DLG', false)
-      } catch (e) {
-        notification.error({
-          message: '添加组件失败！',
-          description: JSON.stringify(e)
+      }
+    })
+    watch(() => store.getters.compoInfos.length, () => {
+      const options: any[] = []
+      for (const cmpInf of store.getters.compoInfos) {
+        let group = options.find(opn => cmpInf.group === opn.value)
+        if (!group) {
+          group = {
+            value: cmpInf.group,
+            label: cmpInf.group,
+            children: []
+          }
+          options.push(group)
+        }
+        group.children.push({
+          value: cmpInf.name,
+          label: cmpInf.name
         })
       }
+      addCmpMapper['gptp'].options = options
+    })
+
+    function onAddCmpOfTypeClicked (group: string, cmpNam: string) {
+      showAddCmp.value = true
+      addCmpForm.gptp = [group, cmpNam as CompoType]
+    }
+    function onAddCmpOfParentClicked (parent: string) {
+      showAddCmp.value = true
+      addCmpForm.parent = parent
+    }
+    function onAddCmpSubmit (addCmp: AddCmpForm) {
+      // @_@
+      store.commit('ADD_COMPO', addCmp)
     }
     return {
       store,
@@ -168,9 +220,12 @@ export default defineComponent({
       pages,
       pgRefs,
       actTab,
-      addCmpVisible,
-      addCmpFormRef,
+      showAddCmp,
+      addCmpForm,
+      addCmpMapper,
 
+      onAddCmpOfTypeClicked,
+      onAddCmpOfParentClicked,
       onAddCmpSubmit
     }
   }

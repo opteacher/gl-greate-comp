@@ -1,0 +1,91 @@
+{
+  "data": [
+    {
+      "name": "Block",
+      "desc": "块",
+      "group": "basic",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/5rWLU27so/Grid.svg",
+      "tag": "div",
+      "slot": "#inner"
+    },
+    {
+      "name": "Text",
+      "desc": "文本",
+      "group": "basic",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/GOM1KQ24O/Typography.svg",
+      "tag": "p",
+      "slot": "#inner"
+    },
+    {
+      "name": "Button",
+      "desc": "按钮",
+      "group": "ant-design-vue",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/fNUKzY1sk/Button.svg",
+      "lib": "ant-design-vue/lib/button",
+      "tag": "a-button"
+    },
+    {
+      "name": "Input",
+      "desc": "输入框",
+      "group": "ant-design-vue",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/xS9YEJhfe/Input.svg",
+      "lib": "ant-design-vue/lib/input",
+      "tag": "a-input"
+    },
+    {
+      "name": "Select",
+      "desc": "下拉选择框",
+      "group": "ant-design-vue",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/_0XzgOis7/Select.svg"
+    },
+    {
+      "name": "Icon",
+      "desc": "图表",
+      "group": "ant-design-vue",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/rrwbSt3FQ/Icon.svg"
+    },
+    {
+      "name": "Divider",
+      "desc": "分隔线",
+      "group": "ant-design-vue",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/5swjECahe/Divider.svg"
+    },
+    {
+      "name": "Cascader",
+      "desc": "多级下拉框",
+      "group": "ant-design-vue",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/UdS8y8xyZ/Cascader.svg"
+    },
+    {
+      "name": "Checkbox",
+      "desc": "多选框",
+      "group": "ant-design-vue",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/8nbVbHEm_/CheckBox.svg"
+    },
+    {
+      "name": "DatePicker",
+      "desc": "日期选择器",
+      "group": "ant-design-vue",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/RT_USzA48/DatePicker.svg"
+    },
+    {
+      "name": "Button",
+      "desc": "按钮",
+      "group": "element-plus",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/fNUKzY1sk/Button.svg",
+      "lib": "element-plus/lib/components/button",
+      "tag": "el-button",
+      "slot": "#inner"
+    },
+    {
+      "name": "Input",
+      "desc": "输入框",
+      "group": "element-plus",
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/xS9YEJhfe/Input.svg",
+      "lib": "element-plus/lib/components/input",
+      "tag": "el-input",
+      "class": "el-input",
+      "slot": "value"
+    }
+  ]
+}

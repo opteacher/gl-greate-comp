@@ -1,7 +1,7 @@
 <template>
 <div class="w-100 h-100 white-bkgd">
   <template v-if="selPage.name">
-    <data-src-table/>
+    <!-- <data-src-table/>
     <edit-table
       title="参数"
       description="来自外部的参数，一般由父节点给出。可以看作页面后台的Inputs"
@@ -11,7 +11,7 @@
       :dataMapper="paramMapper"
       @save="onParamSave"
       @delete="onParamDel"
-    />
+    /> -->
     <edit-table
       title="变量"
       description="可与页面元素绑定，或作为复杂计算的中间量参与。可以看作页面后台的Outputs"
@@ -61,7 +61,7 @@ import { Field, buildTypes, Page, Compo, Mapper, Attr } from '@/common'
 import { SwapOutlined, SwapRightOutlined } from '@ant-design/icons-vue'
 import FormDialog from '../components/FormDialog.vue'
 import EditTable from './EditTable.vue'
-import DataSrcTable from '../components/DataSrcTable.vue'
+// import DataSrcTable from '../components/DataSrcTable.vue'
 const paramCols = [
   {
     title: '参数名',
@@ -207,7 +207,7 @@ export default defineComponent({
     SwapRightOutlined,
     FormDialog,
     EditTable,
-    DataSrcTable,
+    // DataSrcTable,
   },
   setup () {
     const store = useStore()

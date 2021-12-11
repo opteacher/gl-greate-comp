@@ -41,34 +41,39 @@ export interface SelUiFwkFormState {
 
 export class CompoInfo {
   name: string
-  clazz: string
+  // 前置类：如果指定该项，则组件的遮罩会根据这个类去获取组件的位置和尺寸信息
+  // 并创建自身，所以这个类要么是组件本身所拥有，要么是组件的父类所拥有
+  class: string
   desc: string
   cover: string
   lib: string
   tag: string
   imported: any
   slot: string
+  group: string
 
   constructor () {
     this.name = ''
-    this.clazz = ''
+    this.class = ''
     this.desc = ''
     this.cover = ''
     this.lib = ''
     this.tag = ''
     this.imported = null
     this.slot = ''
+    this.group = ''
   }
 
   public static copy (src: any, tgt?: CompoInfo): CompoInfo {
     tgt = tgt || new CompoInfo()
     tgt.name = src.name
-    tgt.clazz = src.clazz || tgt.clazz
+    tgt.class = src.class || tgt.class
     tgt.desc = src.desc || tgt.desc
     tgt.cover = src.cover || tgt.cover
     tgt.lib = src.lib || tgt.lib
     tgt.tag = src.tag || tgt.tag
     tgt.slot = src.slot || tgt.slot
+    tgt.group = src.group || tgt.group
     return tgt
   }
 }
@@ -199,7 +204,7 @@ export class Size extends StrIterable {
 
 export type PosType = 'static' | 'relative' | 'absolute' | 'fixed'
 
-export type CompoType = 'Input' | 'Button' | 'Select' | 'Checkbox' | 'Unknown'
+export type CompoType = 'Block' | 'Input' | 'Button' | 'Select' | 'Checkbox' | 'Unknown'
 export class Position extends StrIterable {
   position: PosType
   left: NumSize
@@ -207,7 +212,7 @@ export class Position extends StrIterable {
   right: NumSize
   bottom: NumSize
 
-  constructor() {
+  constructor () {
     super()
     this.position = 'static'
     this.left = [NaN, Unit.px] as NumSize
@@ -226,17 +231,35 @@ export class Position extends StrIterable {
     return tgt
   }
 }
+
+export type DisplayType = 'none' | 'block' | 'inline' | 'inline-block' |
+  'list-item' | 'run-in' | 'table' | 'inline-table' | 'inherit' |
+  'flex' | 'inline-flex'
+export class Layout extends StrIterable {
+  display: DisplayType
+
+  constructor () {
+    super()
+    this.display = 'inherit'
+  }
+
+  public static copy (src: any, tgt?: Layout): Layout {
+    tgt = tgt || new Layout()
+    tgt.display = src.display || tgt.display
+    return tgt
+  }
+}
 export class Styles extends StrIterable {
   backgroundColor: string
 
   constructor () {
     super()
-    this.backgroundColor = ''
+    this.backgroundColor = 'transparent'
   }
 
   public static copy (src: any, tgt?: Styles): Styles {
     tgt = tgt || new Styles()
-    tgt.backgroundColor = src.backgroundColor || ''
+    tgt.backgroundColor = src.backgroundColor || tgt.backgroundColor
     return tgt
   }
 }
@@ -250,11 +273,11 @@ export function buildStyles (styled: StrIterable, ignores: string[] = []): strin
       return ''
     }
   }
-  const mkClrStyle = (key: string, color?: string): string => {
-    return !ignores.includes(key) && color ? `${key}: ${color}` : ''
+  const mkBscStyle = (key: string, value?: string, skip?: string): string => {
+    return !ignores.includes(key) && (skip ? value !== skip : value) ? `${key}: ${value}` : ''
   }
   return (styled.styles ? [
-    mkClrStyle('background-color', styled.styles.backgroundColor)
+    mkBscStyle('background-color', styled.styles.backgroundColor, 'transparent')
   ] : []).concat(pos !== 'static' ? [
     !ignores.includes('position') ? `position: ${pos}` : '',
     mkNumStyle('left', styled.position.left),
@@ -272,35 +295,43 @@ export function buildStyles (styled: StrIterable, ignores: string[] = []): strin
     mkNumStyle('margin-top', styled.size.marginTop),
     mkNumStyle('margin-right', styled.size.marginRight),
     mkNumStyle('margin-bottom', styled.size.marginBottom),
+  ]).concat([
+    mkBscStyle('display', styled.layout.display, 'inherit')
   ]).filter((x) => x !== '').join(';')
 }
 export class Compo extends StrIterable {
   name: string
   tag: string
+  class: string
   parent: string
+  group: string
   ctype: CompoType
   size: Size
   styles: Styles
   position: Position
+  layout: Layout
   children: Compo[]
   static cpIgnores: string[] = [
-    'name', 'parent', 'ctype', 'size',
-    'styles', 'position', 'children'
+    'name', 'class', 'parent', 'group', 'ctype', 'size',
+    'styles', 'position', 'layout', 'children'
   ]
   static attrIgnores: string[] = [
-    'name', 'tag', 'parent', 'ctype', 'size',
-    'position', 'children', 'styles', '#inner'
+    'name', 'class', 'tag', 'parent', 'group', 'ctype', 'size',
+    'position', 'layout', 'children', 'styles', '#inner'
   ]
 
   constructor () {
     super()
     this.name = ''
     this.tag = ''
+    this.class = ''
     this.parent = ''
+    this.group = ''
     this.ctype = 'Unknown'
     this.size = new Size()
     this.styles = new Styles()
     this.position = new Position()
+    this.layout = new Layout()
     this.children = []
   }
 
@@ -335,6 +366,7 @@ export class Compo extends StrIterable {
     tgt = tgt || new Compo()
     tgt.name = src.name || tgt.name
     tgt.tag = src.tag || tgt.tag
+    tgt.class = src.class || tgt.class
     tgt.parent = src.parent || tgt.parent
     tgt.ctype = src.ctype || tgt.ctype
     if (src.size) {
@@ -345,6 +377,9 @@ export class Compo extends StrIterable {
     }
     if (src.position) {
       Position.copy(src.position, tgt.position)
+    }
+    if (src.layout) {
+      Layout.copy(src.layout, tgt.layout)
     }
     tgt.children = src.children ? src.children.map((subCompo: any) => {
       return Compo.copy(subCompo)
@@ -669,4 +704,11 @@ export class DataSrc {
     tgt.varType = force ? src.varType : (src.varType || tgt.varType)
     return tgt
   }
+}
+
+export type DropPos = 'top' | 'bottom' | 'left' | 'right' | 'inner' | ''
+export interface DragDropInfo {
+  dragCompo: string
+  dropCompo: string
+  dropPos: DropPos
 }

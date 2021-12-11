@@ -1,6 +1,8 @@
 <template>
 <a-space class="p-10">
-  <a-button type="primary" @click="addMod = true">添加{{title}}</a-button>
+  <a-button v-if="addable" type="primary" @click="addMod = true">
+    添加{{title}}
+  </a-button>
   <template v-if="description">
     <InfoCircleOutlined style="color: #1890ff"/>
     <p class="mb-0">{{description}}</p>
@@ -98,7 +100,7 @@
     </template>
     <template v-else>
       <ul class="unstyled-list">
-        <li class="mb-3">
+        <li v-if="editable" class="mb-3">
           <a-button size="small"
             @click="onEditClicked(index, record)"
           >编辑</a-button>
@@ -123,7 +125,7 @@ import { computed, defineComponent, ref, watch } from 'vue'
 import { InfoCircleOutlined } from '@ant-design/icons-vue'
 export default defineComponent({
   name: 'EditableTable',
-  emits: ['save', 'delete'],
+  emits: ['add', 'save', 'delete'],
   components: {
     InfoCircleOutlined
   },
@@ -134,7 +136,9 @@ export default defineComponent({
     data: { type: Array, required: true },
     sclHeight: { type: Number, default: 300 },
     dftRecord: { type: Object, default: () => ({}) },
-    dataMapper: { type: Mapper, required: true }
+    dataMapper: { type: Mapper, required: true },
+    editable: { type: Boolean, default: true },
+    addable: { type: Boolean, default: true }
   },
   setup (props, { emit }) {
     const addMod = ref(false)

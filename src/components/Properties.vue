@@ -69,7 +69,7 @@
           'background-color': prop.value
         }" @click="selClrVisible = true"/>
         <a-modal
-          bodyStyle="padding: 0"
+          :bodyStyle="{ padding: 0 }"
           v-model:visible="selClrVisible"
           title="选择颜色"
           @ok="onSelClrConfirmed(prop)"
@@ -114,12 +114,12 @@ export default defineComponent({
       return (props.prefix ? `${props.prefix}.` : '') + prop.key
     }
     function onValueChanged (value: any, prop: Property) {
-      store.commit('SET_PROP_VALUE', {
+      store.commit('SET_PROP_VAL', {
         key: mkKey(prop), value, unit: prop.unit
       })
     }
     function onUnitChanged (unit: Unit, prop: Property) {
-      store.commit('SET_PROP_VALUE', {
+      store.commit('SET_PROP_VAL', {
         key: mkKey(prop), unit
       })
     }
@@ -139,7 +139,7 @@ export default defineComponent({
         selColor.value.a
       )
       prop.value = value
-      store.commit('SET_PROP_VALUE', {
+      store.commit('SET_PROP_VAL', {
         key: mkKey(prop), value
       })
       selClrVisible.value = false

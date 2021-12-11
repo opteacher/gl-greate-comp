@@ -1,6 +1,6 @@
 import path from 'path'
 import { writeFile } from 'fs/promises'
-import cmpLib from '../resources/element-ui-vue_1.1.0-beta.19.json'
+import cmpLib from '../resources/components.json'
 import { basicMapper, basicTypes, Compo, BasicType, Page, AttrType, CompoInfo } from '../utils/common.js'
 
 const bscTyps = new Set(basicTypes)
@@ -71,18 +71,19 @@ function scanCompoBuildTemp (page: Page, compo: Compo, deep: number): string {
     template += ` ${vModel}:${cmpInf.slot}="${bindField.name}"`
   }
   const hasChild = compo.children.length || cmpInf.slot === '#inner'
-  template += hasChild ? '' : '/' + '>\n'
+  template += (hasChild ? '' : '/') + '>\n'
   // 如果组件有绑定变量，变量会覆盖该组件的子组件
   if (bindField && cmpInf.slot === '#inner') {
     template += indent((++deep)) + `{{${bindField.name}}}\n`
+  } else if (compo['#inner']) {
+    template += indent((++deep)) + compo['#inner'] + '\n'
   } else {
     for (const subCmp of compo.children) {
       template += scanCompoBuildTemp(page, subCmp, ++deep)
     }
   }
   if (hasChild) {
-    --deep
-    template += `</${cmpInf.tag}>\n`
+    template += indent((--deep)) + `</${cmpInf.tag}>\n`
   }
   return template
 }
@@ -99,7 +100,10 @@ function buildScriptV3 (page: Page): string {
   --deep
   script += indent(deep) + '} from \'vue\'\n'
   // @_@：默认使用axios后台访问
-  script += indent(deep) + 'import axios from \'axios\'\n'
+  const dataSrc = page.dataSrc
+  if (dataSrc.url) {
+    script += indent(deep) + 'import axios from \'axios\'\n'
+  }
   script += '\n'
   for (const clazz of page.classes) {
     script += indent(deep) + `class ${clazz.name} {\n`
@@ -162,7 +166,6 @@ function buildScriptV3 (page: Page): string {
   script += indent(deep) + `setup (${page.params.length ? 'props' : ''}) {\n`
   ++deep
 
-  const dataSrc = page.dataSrc
   if (dataSrc.url) {
     script += indent(deep) + `const ${dataSrc.varName} = ref(`
     script += initDft(dataSrc.varType) + ')\n'

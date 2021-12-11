@@ -21,6 +21,7 @@
 import { buildStyles, Page, Rect } from '@/common'
 import { waitFor } from '@/utils'
 import { computed, defineComponent, onMounted, reactive } from 'vue'
+import { useStore } from 'vuex'
 import CompoCard from '../components/CompoCard.vue'
 export default defineComponent({
   name: 'PageCard',
@@ -31,6 +32,7 @@ export default defineComponent({
     page: { type: Page, required: true }
   },
   setup (props) {
+    const store = useStore()
     const styles = computed(() => {
       return [
         'position: absolute',
@@ -70,7 +72,7 @@ export default defineComponent({
     }
     return {
       styles,
-      onSizeChanged
+      onSizeChanged,
     }
   }
 })

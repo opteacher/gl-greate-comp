@@ -1,42 +1,62 @@
 <template>
-<div
-  :style="{
-    position: mask.position,
-    left: `${mask.area.left}px`,
-    top: `${mask.area.top}px`,
-    width: `${mask.area.width}px`,
-    height: `${mask.area.height}px`,
-    'z-index': 50,
-    'background-color': 'transparent',
-  }"
-  @click="onCompoClicked"
-  @mousedown="onMouseDown"
-  @mousemove="onMouseMove"
-  @mouseenter="onMouseEnter"
-  @mouseleave="onMouseLeave"
-  @mouseup="onMouseUp"
-/>
-<keep-alive v-if="compo.tag">
-  <component :is="compo.tag"
-    :class="{ 'card-active': isActive }"
-    v-bind="compo.toAttributes()"
-  >
-    {{compo['#inner']}}
-  </component>
-</keep-alive>
+<div :draggable="false"
+  @dragstart.stop="onDragStart"
+  @dragend.stop="onDragEnd"
+  @dragenter="onDragEnter"
+  @dragleave="onDragLeave"
+  @drop.stop="onDragDrop"
+  @dragover.prevent
+>
+  <div
+    :style="{
+      position: mask.position,
+      left: `${mask.area.left}px`,
+      top: `${mask.area.top}px`,
+      width: `${mask.area.width}px`,
+      height: `${mask.area.height}px`,
+      'z-index': 50,
+      'background-color': 'transparent',
+    }"
+    @click="onCompoClicked"
+    @mouseenter="onMouseEnter"
+    @mouseleave="onMouseLeave"
+  />
+  <keep-alive v-if="compo.tag">
+    <component :is="compo.tag"
+      :class="{
+        'card-active': isActive,
+        'card-drag-in': isDragIn
+      }"
+      v-bind="compo.toAttributes()"
+    >
+      <template v-if="!compo.children.length">
+        {{compo['#inner']}}
+      </template>
+      <component-card v-else
+        v-for="subCmp in compo.children"
+        :key="subCmp.name" :compo="subCmp"
+      />
+    </component>
+  </keep-alive>
+</div>
+<drag-drop-dlg @dropPosClick="onDropPosClicked"/>
 </template>
 
 <script lang="ts">
-import { Compo, Point, PosType, Rect } from '@/common'
+import { Compo, DragDropInfo, DropPos, Point, PosType, Rect } from '@/common'
 import { waitFor } from '@/utils'
-import { computed, defineComponent, onMounted, reactive } from 'vue'
+import { computed, defineComponent, onMounted, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
+import DragDropDlg from './DragDropDlg.vue'
 interface Mask {
   area: Rect
   position: PosType
 }
 export default defineComponent({
   name: 'ComponentCard',
+  components: {
+    DragDropDlg
+  },
   props: {
     compo: { type: Compo, required: true },
   },
@@ -73,6 +93,7 @@ export default defineComponent({
     } as Mask)
     const mousedown = reactive(new Point(-1, -1))
     const rszObs = new ResizeObserver(updMask)
+    const isDragIn = ref(false)
 
     onMounted(async () => {
       const el = await waitFor(props.compo.name, undefined, 5)
@@ -82,12 +103,25 @@ export default defineComponent({
       rszObs.observe(el as Element)
       updMask()
     })
+    watch(() => store.getters.forceRefresh, () => {
+      if (store.getters.forceRefresh && isActive.value) {
+        isDragIn.value = false
+      }
+    })
 
     function updMask () {
-      const el: HTMLElement | null = document
+      let el: HTMLElement | null = document
         .getElementById(props.compo.name)
       if (!el) {
         return
+      }
+      if (props.compo.class) {
+        while (!el.classList.contains(props.compo.class)) {
+          el = el?.parentElement
+          if (!el) {
+            return
+          }
+        }
       }
       mask.area.left = el.offsetLeft
       mask.area.top = el.offsetTop
@@ -112,7 +146,7 @@ export default defineComponent({
       switch (store.getters.curOper) {
       case 'move':
         if (mousedown.isValuable()) {
-          store.commit('SET_PROP_VALUE', [{
+          store.commit('SET_PROP_VAL', [{
             key: 'position.left',
             value: e.clientX - mousedown.x
           }, {
@@ -141,8 +175,39 @@ export default defineComponent({
       mousedown.toInvaluable()
       updMask()
     }
+    function onDragEnter () {
+      if (!isActive.value) {
+        isDragIn.value = true
+      }
+    }
+    function onDragLeave () {
+      isDragIn.value = false
+    }
+    function onDragStart (event: DragEvent) {
+      event.dataTransfer?.setData('text/plain', props.compo.name)
+    }
+    function onDragEnd (event: DragEvent) {
+      event.dataTransfer?.clearData()
+    }
+    function onDragDrop (event: DragEvent) {
+      if (isActive.value) {
+        return
+      }
+      store.commit('SET_DD_INFO', {
+        dragCompo: event.dataTransfer?.getData('text/plain'),
+        dropCompo: props.compo.name
+      })
+      store.commit('SET_DD_VISIBLE', true)
+      isDragIn.value = false
+    }
+    function onDropPosClicked (pos: DropPos) {
+      store.commit('SET_DD_INFO', { dropPos: pos })
+      store.dispatch('chgCompoPos', store.getters.dragDropInfo)
+      store.commit('SET_DD_VISIBLE', false)
+    }
     return {
       isActive,
+      isDragIn,
       mask,
       mousedown,
 
@@ -152,7 +217,19 @@ export default defineComponent({
       onMouseEnter,
       onMouseLeave,
       onMouseUp,
+      onDragStart,
+      onDragEnd,
+      onDragEnter,
+      onDragLeave,
+      onDragDrop,
+      onDropPosClicked
     }
   }
 })
 </script>
+
+<style lang="less" scoped>
+.card-drag-in {
+  border: 2px solid black;
+}
+</style>

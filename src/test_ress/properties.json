@@ -57,6 +57,27 @@
         }
       }
     ],
+    "layout": [
+      {
+        "title": "框类型",
+        "key": "display",
+        "type": "select",
+        "options": [
+          "none",
+          "block",
+          "inline",
+          "inline-block",
+          "flex",
+          "inline-flex",
+          "list-item",
+          "run-in",
+          "table",
+          "inline-table",
+          "inherit"
+        ],
+        "value": "block"
+      }
+    ],
     "size": [
       {
         "title": "宽度",
@@ -237,6 +258,44 @@
       },
       {
         "title": "页面样式",
+        "key": "styles",
+        "type": "styles",
+        "value": null
+      }
+    ],
+    "Block": [
+      {
+        "title": "块名",
+        "key": "name",
+        "type": "string",
+        "value": ""
+      },
+      {
+        "title": "内容",
+        "key": "#inner",
+        "type": "string",
+        "value": "内容"
+      },
+      {
+        "title": "位置",
+        "key": "position",
+        "type": "position",
+        "value": null
+      },
+      {
+        "title": "布局",
+        "key": "layout",
+        "type": "layout",
+        "value": null
+      },
+      {
+        "title": "尺寸",
+        "key": "size",
+        "type": "size",
+        "value": null
+      },
+      {
+        "title": "样式",
         "key": "styles",
         "type": "styles",
         "value": null

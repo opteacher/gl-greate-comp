@@ -12,23 +12,22 @@ import {
   StrIterable,
   UiFramework,
   Unit,
-  DataSrc
+  DataSrc,
+  Property,
+  DragDropInfo,
+  DropPos,
 } from '@/common'
 import { createStore } from 'vuex'
 import pageRess from '../test_ress/pages.json'
 import uiInfoRess from '../test_ress/uiFramworks.json'
-import compoRess from '@/test_ress/element-ui-vue_1.1.0-beta.19.json'
+import compoRess from '@/test_ress/components.json'
+import propRess from '@/test_ress/properties.json'
 import { message } from 'ant-design-vue'
 
 const dftCompo = new Compo()
 const dftPage = new Page()
 interface SetPropParam {
   key: string, value?: any, unit?: Unit
-}
-interface SetAddCmpDlg {
-  show: boolean
-  cmpTyp?: CompoType
-  belong?: string
 }
 
 export type DesignType = 'frontend' | 'backend'
@@ -37,15 +36,24 @@ function fixCmpByInf (state: any, compo: Compo): Compo {
   const cmpInf = state.compoLibrary.find((cmp: any) => {
     return cmp.name === compo.ctype
   })
-  if (cmpInf && cmpInf.tag) {
-    compo.tag = cmpInf.tag
+  if (cmpInf) {
+    compo.tag = cmpInf.tag || ''
+    compo.class = cmpInf.class || ''
+  }
+  for (const prop of propRess.data[compo.ctype]) {
+    if (prop.key === 'name' || prop.key === 'parent') {
+      continue
+    }
+    if (prop.value) {
+      compo[prop.key] = prop.value
+    }
   }
   return compo
 }
 
 export default createStore({
   state: {
-    dsgnType: 'backend' as DesignType,
+    dsgnType: 'frontend' as DesignType,
     uiFrameworks: [] as UiFramework[],
     selUiFramework: '',
     selUiLibrary: '',
@@ -55,8 +63,10 @@ export default createStore({
     selPage: dftPage,
     selCompo: dftCompo,
     curOper: 'move' as OperType,
-    addCompo: { show: false } as SetAddCmpDlg,
-    avaTypes: basicTypes
+    avaTypes: basicTypes,
+    fcRefresh: false,
+    dragDropVisible: false,
+    dragDropInfo: {} as DragDropInfo
   },
   mutations: {
     SET_DESIGN_TYPE (state, payload: DesignType) {
@@ -130,7 +140,7 @@ export default createStore({
         ]
       }
     },
-    SET_PROP_VALUE (state, payload: SetPropParam | SetPropParam[]) {
+    SET_PROP_VAL (state, payload: SetPropParam | SetPropParam[]) {
       if (!Array.isArray(payload)) {
         payload = [payload]
       }
@@ -153,14 +163,29 @@ export default createStore({
         ] : propParam.value
         selected[key] = value
       }
+      state.fcRefresh = true
     },
-    ADD_COMPO (state, payload: Compo) {
-      state.components[payload.name] = fixCmpByInf(state, payload)
-      if (state.components[payload.parent]) {
-        state.components[payload.parent].children.push(payload)
+    ADD_COMPO (state, payload: Compo | {
+      compo: Compo, index: number, replace: boolean
+    }) {
+      const index = typeof payload.index === 'undefined' ? -1 : payload.index
+      const replace = payload.replace as boolean
+      const compo = fixCmpByInf(state,
+        Compo.copy(payload.compo || payload)
+      )
+      state.components[compo.name] = compo
+      let children = []
+      if (state.components[compo.parent]) {
+        children = state.components[compo.parent].children
       } else {
-        const page = state.pages.find(pg => pg.name === payload.parent)
-        page?.children.push(payload)
+        children = state.pages.find(pg => {
+          return pg.name === compo.parent
+        })?.children || []
+      }
+      if (index !== -1) {
+        children.splice(index, replace ? 1 : 0, compo)
+      } else {
+        children.push(compo)
       }
     },
     DEL_COMPO (state, payload: string) {
@@ -192,17 +217,6 @@ export default createStore({
     },
     SET_OPER (state, payload: OperType) {
       state.curOper = payload
-    },
-    SET_ADD_CMP_DLG (state, payload: boolean | SetAddCmpDlg) {
-      if (typeof payload === "boolean") {
-        state.addCompo.show = payload
-        if (!payload) {
-          state.addCompo.cmpTyp = undefined
-          state.addCompo.belong = undefined
-        }
-      } else {
-        state.addCompo = payload
-      }
     },
     SAVE_ATTR (state, payload: {
       prop: string,
@@ -276,6 +290,27 @@ export default createStore({
     },
     SET_DATA_SRC (state, payload: DataSrc) {
       DataSrc.copy(payload, state.selPage.dataSrc)
+    },
+    SET_FC_REFRESH (state, payload = false) {
+      state.fcRefresh = payload
+    },
+    SET_DD_VISIBLE (state, payload: boolean) {
+      state.dragDropVisible = payload
+    },
+    SET_DD_INFO (state, payload: {
+      dragCompo?: string,
+      dropCompo?: string,
+      dropPos?: DropPos
+    }) {
+      if (typeof payload.dragCompo !== 'undefined') {
+        state.dragDropInfo.dragCompo = payload.dragCompo
+      }
+      if (typeof payload.dropCompo !== 'undefined') {
+        state.dragDropInfo.dropCompo = payload.dropCompo
+      }
+      if (typeof payload.dropPos !== 'undefined') {
+        state.dragDropInfo.dropPos = payload.dropPos
+      }
     }
   },
   actions: {
@@ -284,6 +319,80 @@ export default createStore({
       await new Promise(resolve => setTimeout(resolve, 1000))
       ctx.commit('INIT_PAGES')
       message.destroy()
+    },
+    chgCompoPos ({ commit, state, getters }, dragDropInfo: DragDropInfo) {
+      const dragCompo = state.components[dragDropInfo.dragCompo]
+      const dropCompo = state.components[dragDropInfo.dropCompo]
+      const dropParent = getters.compoByName(dropCompo.parent)
+      // 从drag组件的父类中删除它（因为drag组件和drop组件有可能在一个父组件中，
+      // 所以先删除drag组件以免影响之后drop组件的索引）
+      const dragParent = getters.compoByName(dragCompo.parent)
+      const dragIndex = dragParent.children.findIndex((compo: Compo) => {
+        return compo.name === dragCompo.name
+      })
+      dragParent.children.splice(dragIndex, 1)
+      const dropIndex = dropParent.children.findIndex((compo: Compo) => {
+        return compo.name === dropCompo.name
+      })
+
+      const parentIsInlBlk =
+        dragCompo.parent === dropCompo.parent &&
+        dropParent.layout.display === 'inline-flex'
+      let inlBlock = null
+      switch (dragDropInfo.dropPos) {
+      case 'top':
+        dropParent.children.splice(dropIndex - 1, 0, dragCompo)
+        break
+      case 'left':
+        if (parentIsInlBlk) {
+          inlBlock = dropParent
+          inlBlock.children.splice(dropIndex - 1, 0, dragCompo)
+        } else {
+          inlBlock = new Compo()
+          inlBlock.name = 'inlineBlock001'
+          inlBlock.ctype = 'Block'
+          inlBlock.parent = dropCompo.parent
+          inlBlock.layout.display = 'inline-flex'
+          inlBlock.children = [dragCompo, dropCompo]
+          commit('ADD_COMPO', {
+            compo: inlBlock,
+            index: dropIndex,
+            replace: true
+          })
+          dragCompo.parent = inlBlock.name
+          dropCompo.parent = inlBlock.name
+        }
+        break
+      case 'inner':
+        dropCompo.children.push(dragCompo)
+        break
+      case 'right':
+        if (parentIsInlBlk) {
+          inlBlock = dropParent
+          inlBlock.children.splice(dropIndex + 1, 0, dragCompo)
+        } else {
+          inlBlock = new Compo()
+          inlBlock.name = 'inlineBlock001'
+          inlBlock.ctype = 'Block'
+          inlBlock.parent = dropCompo.parent
+          inlBlock.layout.display = 'inline-flex'
+          inlBlock.children = [dropCompo, dragCompo]
+          commit('ADD_COMPO', {
+            compo: inlBlock,
+            index: dropIndex,
+            replace: true
+          })
+          dragCompo.parent = inlBlock.name
+          dropCompo.parent = inlBlock.name
+        }
+        break
+      case 'bottom':
+        dropParent.children.splice(dropIndex + 1, 0, dragCompo)
+        break
+      default:
+        return
+      }
+      state.fcRefresh = true
     }
   },
   getters: {
@@ -320,23 +429,29 @@ export default createStore({
     pageNames (state): string[] {
       return state.pages.map(page => page.name)
     },
+    pageByName: (state) => (name: string): Page | undefined => {
+      return state.pages.find((page: Page) => page.name === name)
+    },
     compoNames (state): string[] {
       return Object.keys(state.components)
     },
     compoByName: (state) => (name: string): Compo => {
-      return state.components[name]
-    },
-    addCmpInfo (state): SetAddCmpDlg {
-      return state.addCompo
-    },
-    addCmpActive (state): boolean {
-      return state.addCompo.show
+      return state.components[name] || state.pages.find((page: Page) => page.name === name)
     },
     isCompo: (state) => (name: string): boolean => {
       return name in state.components
     },
     avaTypes (state): string[] {
       return state.avaTypes
+    },
+    forceRefresh (state): boolean {
+      return state.fcRefresh
+    },
+    showDragDrop (state) {
+      return state.dragDropVisible
+    },
+    dragDropInfo (state) {
+      return state.dragDropInfo
     }
   },
   modules: {

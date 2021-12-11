@@ -39,6 +39,9 @@
               :value="item.value || item"
             >
               {{item.title || item}}
+              <span v-if="item.subTitle" style="float: right">
+                {{item.subTitle}}
+              </span>
             </a-select-option>
           </a-select>
           <a-checkbox
@@ -55,6 +58,12 @@
             v-else-if="value.type === 'Textarea'"
             v-model:value="formState[key]"
             :rows="4"
+            :disabled="value.disabled"
+          />
+          <a-cascader
+            v-else-if="value.type === 'Cascader'"
+            :options="value.options"
+            v-model:value="formState[key]"
             :disabled="value.disabled"
           />
         </a-form-item>

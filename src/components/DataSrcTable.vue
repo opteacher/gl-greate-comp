@@ -2,15 +2,15 @@
 <div v-if="!dataSrc.url" class="p-10">
   <a-row type="flex" justify="space-between">
     <a-col :span="12">
-      <h3>数据源</h3>
+      <h4>数据源</h4>
     </a-col>
     <a-col class="text-right" :span="12">
-      <a-button type="primary" @click="onShowDataSrcClicked">修改</a-button>
+      <a-button type="primary" size="small" @click="onShowDataSrcClicked">修改</a-button>
     </a-col>
   </a-row>
   <a-empty description="无数据源"/>
 </div>
-<a-descriptions v-else bordered :column="2">
+<a-descriptions v-else bordered :column="1" size="small">
   <template #title>
     <h3 class="ml-10 mt-10">数据源</h3>
   </template>
@@ -20,7 +20,7 @@
       @click="onShowDataSrcClicked"
     >修改</a-button>
   </template>
-  <a-descriptions-item label="链接" :span="2">
+  <a-descriptions-item label="链接">
     {{dataSrc.url}}
   </a-descriptions-item>
   <a-descriptions-item label="访问方式">
