@@ -1,62 +1,64 @@
 <template>
-<a-row class="p-5" :gutter="5" type="flex">
-  <a-col flex="auto">
-    <a-button
-      class="w-100" type="primary"
-      @click="showEdtClass = true"
-    >添加类</a-button>
-  </a-col>
-  <a-col flex="auto">
-    <a-button class="w-100">添加枚举</a-button>
-  </a-col>
-  <a-col flex="32px">
-    <a-button>
-      <template #icon>
-        <EllipsisOutlined />
-      </template>
-    </a-button>
-  </a-col>
-</a-row>
-<div
-  v-for="clazz in selPage.classes"
-  :key="clazz.name"
-  class="plr-5 pb-10"
->
-  <a-card :bodyStyle="{ padding: 0 }">
-    <template #title>
-      {{clazz.name}}
-      <a-tag v-if="clazz.copyable" color="#87d068">copy</a-tag>
-    </template>
-    <template #extra>
-      <a href="#" @click="onEdtClazzClick(clazz)">
-        <SettingOutlined />
-      </a>
-    </template>
-    <div class="p-5">
+<div style="overflow-x: hidden">
+  <a-row class="p-5" :gutter="5" type="flex">
+    <a-col flex="auto">
       <a-button
         class="w-100" type="primary"
-        @click="onAddPropClick(clazz)"
-      >
-        <template #icon><PlusOutlined /></template>
-        添加属性
+        @click="showEdtClass = true"
+      >添加类</a-button>
+    </a-col>
+    <a-col flex="auto">
+      <a-button class="w-100">添加枚举</a-button>
+    </a-col>
+    <a-col flex="32px">
+      <a-button>
+        <template #icon>
+          <EllipsisOutlined />
+        </template>
       </a-button>
-    </div>
-    <a-table
-      :columns="columns"
-      :data-source="clazz.props"
-      :pagination="false"
-    >
-      <template #actionHeader><FormOutlined /></template>
-      <template #action="{ record }">
-        <a-popconfirm
-          title="确定删除该属性？"
-          @confirm="onDelPropSubmit(record.key)"
-        >
-          <DeleteOutlined style="color: #f5222d" />
-        </a-popconfirm>
+    </a-col>
+  </a-row>
+  <div
+    v-for="clazz in selPage.classes"
+    :key="clazz.name"
+    class="plr-5 pb-10"
+  >
+    <a-card :bodyStyle="{ padding: 0 }">
+      <template #title>
+        {{clazz.name}}
+        <a-tag v-if="clazz.copyable" color="#87d068">copy</a-tag>
       </template>
-    </a-table>
-  </a-card>
+      <template #extra>
+        <a href="#" @click="onEdtClassClick(clazz)">
+          <SettingOutlined />
+        </a>
+      </template>
+      <div class="p-5">
+        <a-button
+          class="w-100" type="primary"
+          @click="onAddPropClick(clazz)"
+        >
+          <template #icon><PlusOutlined /></template>
+          添加属性
+        </a-button>
+      </div>
+      <a-table
+        :columns="columns"
+        :data-source="clazz.props"
+        :pagination="false"
+      >
+        <template #actionHeader><FormOutlined /></template>
+        <template #action="{ record }">
+          <a-popconfirm
+            title="确定删除该属性？"
+            @confirm="onDelPropSubmit(record.key)"
+          >
+            <DeleteOutlined style="color: #f5222d" />
+          </a-popconfirm>
+        </template>
+      </a-table>
+    </a-card>
+  </div>
 </div>
 <form-dialog
   :show="showEdtClass"

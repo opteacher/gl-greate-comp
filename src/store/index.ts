@@ -135,8 +135,7 @@ export default createStore({
         state.selCompo = dftCompo
         state.selPage = state.pages.find(pg => pg.name === payload) || dftPage
         state.avaTypes = [
-          ...basicTypes, ...state.selPage.classes
-            .map((cls: any) => cls.name)
+          ...basicTypes, ...state.selPage.classes.map((cls: any) => cls.name)
         ]
       }
     },
@@ -287,9 +286,6 @@ export default createStore({
       const clazz = Clazz.copy(payload)
       clazz.key = page.classes.length
       page.classes.push(clazz)
-    },
-    SET_DATA_SRC (state, payload: DataSrc) {
-      DataSrc.copy(payload, state.selPage.dataSrc)
     },
     SET_FC_REFRESH (state, payload = false) {
       state.fcRefresh = payload

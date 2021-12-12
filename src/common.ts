@@ -204,7 +204,7 @@ export class Size extends StrIterable {
 
 export type PosType = 'static' | 'relative' | 'absolute' | 'fixed'
 
-export type CompoType = 'Block' | 'Input' | 'Button' | 'Select' | 'Checkbox' | 'Unknown'
+export type CompoType = 'Block' | 'Input' | 'Button' | 'Select' | 'Checkbox' | 'Textarea' | 'Cascader' | 'Unknown'
 export class Position extends StrIterable {
   position: PosType
   left: NumSize
@@ -299,6 +299,17 @@ export function buildStyles (styled: StrIterable, ignores: string[] = []): strin
     mkBscStyle('display', styled.layout.display, 'inherit')
   ]).filter((x) => x !== '').join(';')
 }
+export class AddCmpForm {
+  name: string
+  gptp: string[]
+  parent: string
+
+  constructor () {
+    this.name = ''
+    this.gptp = []
+    this.parent = ''
+  }
+}
 export class Compo extends StrIterable {
   name: string
   tag: string
@@ -333,6 +344,16 @@ export class Compo extends StrIterable {
     this.position = new Position()
     this.layout = new Layout()
     this.children = []
+  }
+
+  public initByForm (addCmpForm: AddCmpForm): Compo {
+    this.name = addCmpForm.name
+    this.parent = addCmpForm.parent
+    if (addCmpForm.gptp && addCmpForm.gptp.length === 2) {
+      this.group = addCmpForm.gptp[0]
+      this.ctype = addCmpForm.gptp[1] as CompoType
+    }
+    return this
   }
 
   public isInside (x: number, y: number): boolean {
@@ -538,7 +559,7 @@ export class Page extends Compo {
   classes: Clazz[]
   params: Attr[] // 等于inputs
   fields: Field[] // 等于outputs
-  dataSrc: DataSrc
+  dataSrcs: DataSrc[]
 
   constructor() {
     super()
@@ -547,7 +568,7 @@ export class Page extends Compo {
     this.classes = []
     this.params = []
     this.fields = []
-    this.dataSrc = new DataSrc()
+    this.dataSrcs = []
   }
 
   public static copy (src: any, tgt?: Page): Page {
@@ -564,7 +585,9 @@ export class Page extends Compo {
     tgt.fields = src.fields ? src.fields.map((field: any, key: number) => {
       return Field.copy(field).setKey(key)
     }) : tgt.fields
-    tgt.dataSrc = src.dataSrc || tgt.dataSrc
+    tgt.dataSrcs = src.dataSrcs ? src.dataSrcs.map((dtSrc: any, key: number) => {
+      return DataSrc.copy(dtSrc).setKey(key)
+    }) : tgt.dataSrcs
     return tgt
   }
 }
@@ -639,10 +662,14 @@ export class Mapper {
       cond: Cond
       attr: Cond
     }[]
+    // type = Select
     options?: string[] | {
-      title: string, value: any
-    }[] // type = Select
-    chkLabels?: [string, string] // type = Checkbox。0为false，1为true
+      title: string
+      subTitle?: string
+      value: any
+    }[]
+    // type = Checkbox。0为false，1为true
+    chkLabels?: [string, string]
   }
 
   constructor (init?: any) {
@@ -672,7 +699,7 @@ export class Mapper {
             }
           }
         }) : [],
-        chkLabels: value.chkLabels || ['', '']
+        chkLabels: value.chkLabels || undefined
       }
     }
   }
@@ -681,28 +708,36 @@ export type Method = 'GET' | 'POST' | 'DELETE' | 'PUT'
 
 export const methods = ['GET', 'POST', 'DELETE', 'PUT']
 export class DataSrc {
+  key: number
   url: string
   method: Method
-  prefix: string
+  data: string
   varName: string
   varType: AttrType
 
   constructor () {
+    this.key = -1
     this.url = ''
     this.method = 'GET'
-    this.prefix = ''
+    this.data = ''
     this.varName = ''
     this.varType = undefined
   }
 
   public static copy (src: any, tgt?: DataSrc, force = false): DataSrc {
     tgt = tgt || new DataSrc()
+    tgt.key = force ? src.key : (src.key || tgt.key)
     tgt.url = force ? src.url : (src.url || tgt.url)
     tgt.method = force ? src.method : (src.method || tgt.method)
-    tgt.prefix = force ? src.prefix : (src.prefix || tgt.prefix)
+    tgt.data = force ? src.data : (src.data || tgt.data)
     tgt.varName = force ? src.varName : (src.varName || tgt.varName)
     tgt.varType = force ? src.varType : (src.varType || tgt.varType)
     return tgt
+  }
+
+  setKey (key: number): DataSrc {
+    this.key = key
+    return this
   }
 }
 

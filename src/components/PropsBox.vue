@@ -1,9 +1,9 @@
 <template>
-<a-tabs tab-position="top" type="card" default-active-key="default">
+<a-tabs tab-position="top" type="card" default-active-key="default" style="height: 100%">
   <a-tab-pane key="default" tab="默认属性">
   </a-tab-pane>
   <a-tab-pane key="css" tab="CSS属性">
-    <div class="props-form">
+    <div style="overflow-y: scroll">
       <a-empty
         v-if="isNoneSeled"
         class="pt-30"
@@ -32,10 +32,10 @@
 </template>
 
 <script lang="ts">
-import { computed, createVNode, defineComponent, ref, watch } from 'vue'
+import { computed, defineComponent, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import Properties from './Properties.vue'
-import { Compo, Property, Page, Attr, Field } from '@/common'
+import { Compo, Property, Page } from '@/common'
 import properties from '../test_ress/properties.json'
 interface SubProps {
   title: string
@@ -153,8 +153,6 @@ export default defineComponent({
 }
 
 .props-form {
-  height: 100%;
-  overflow-y: scroll;
   border-top: 1px solid #f0f0f0;
 }
 </style>

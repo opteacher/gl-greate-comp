@@ -1,7 +1,16 @@
 <template>
-<div class="w-100 h-100 white-bkgd">
+<div class="w-100 h-100 grey-bkgd p-10">
   <template v-if="selPage.name">
-    <!-- <data-src-table/>
+    <edit-table
+      title="数据源"
+      description="通过URL链接获取API传来的数据，而且可以指定返回值中的分量定义数据源变量"
+      :cols="dtSrcCols"
+      :data="dataSrcs"
+      :dftRecord="dftDtSrc"
+      :dataMapper="dtSrcMapper"
+      @save="onParamSave"
+      @delete="onParamDel"
+    />
     <edit-table
       title="参数"
       description="来自外部的参数，一般由父节点给出。可以看作页面后台的Inputs"
@@ -11,7 +20,7 @@
       :dataMapper="paramMapper"
       @save="onParamSave"
       @delete="onParamDel"
-    /> -->
+    />
     <edit-table
       title="变量"
       description="可与页面元素绑定，或作为复杂计算的中间量参与。可以看作页面后台的Outputs"
@@ -57,11 +66,66 @@
 <script lang="ts">
 import { computed, defineComponent, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import { Field, buildTypes, Page, Compo, Mapper, Attr } from '@/common'
+import { Field, buildTypes, Page, Compo, Mapper, Attr, methods, DataSrc } from '@/common'
 import { SwapOutlined, SwapRightOutlined } from '@ant-design/icons-vue'
 import FormDialog from '../components/FormDialog.vue'
 import EditTable from './EditTable.vue'
-// import DataSrcTable from '../components/DataSrcTable.vue'
+const dtSrcCols = [
+  {
+    title: '链接',
+    dataIndex: 'url',
+    key: 'url',
+    slots: { customRender: 'url' }
+  },
+  {
+    title: '访问方式',
+    dataIndex: 'method',
+    key: 'method',
+    slots: { customRender: 'method' }
+  },
+  {
+    title: '返回值分量（可选）',
+    dataIndex: 'data',
+    key: 'data',
+    slots: { customRender: 'data' }
+  },
+  {
+    title: '赋值变量',
+    dataIndex: 'varName',
+    key: 'varName',
+    slots: { customRender: 'varName' }
+  },
+  {
+    title: '赋值变量类型',
+    dataIndex: 'varType',
+    key: 'varType',
+    slots: { customRender: 'varType' }
+  }
+]
+const dtSrcMapper = new Mapper({
+  url: {
+    label: '链接',
+    type: 'Input',
+  },
+  method: {
+    label: '访问方式',
+    type: 'Select',
+    options: methods
+  },
+  data: {
+    label: '返回值分量（可选）',
+    type: 'Input'
+  },
+  varName: {
+    label: '赋值变量',
+    type: 'Input'
+  },
+  varType: {
+    label: '赋值变量',
+    type: 'Select',
+    options: []
+  }
+})
 const paramCols = [
   {
     title: '参数名',
@@ -207,7 +271,6 @@ export default defineComponent({
     SwapRightOutlined,
     FormDialog,
     EditTable,
-    // DataSrcTable,
   },
   setup () {
     const store = useStore()
@@ -218,6 +281,8 @@ export default defineComponent({
     const fields = computed(() => store.getters.seledPage.fields)
     const showBindField = ref(false)
     const bindFieldState = reactive(new Field())
+    const dftDtSrc = new DataSrc();
+    const dataSrcs = computed(() => store.getters.seledPage.dataSrcs)
 
     watch(() => [
       store.getters.pages.length,
@@ -230,18 +295,19 @@ export default defineComponent({
         }),
       }))
     })
-    watch(() => store.getters.avaTypes, () => {
-      paramMapper['type'].options = store.getters.avaTypes
-      fieldMapper['type'].options = [''].concat(store.getters.avaTypes)
-    })
-    watch(() => [
-      store.getters.seledPage.params.length
-    ], () => {
+    watch(() => store.getters.seledPage.params.length, () => {
       bindFieldMapper['source'].options = ['',
         ...store.getters.seledPage.params.map((param: Attr) => param.name)
       ]
     })
+    watch(() => store.getters.avaTypes.length, updTypes)
+    updTypes()
 
+    function updTypes () {
+      dtSrcMapper['varType'].options = store.getters.avaTypes
+      paramMapper['type'].options = store.getters.avaTypes
+      fieldMapper['type'].options = [''].concat(store.getters.avaTypes)
+    }
     function onSaveFieldSubmit (entry: Field) {
       entry.parent = selPage.value.name
       store.commit('SAVE_ATTR', {
@@ -294,6 +360,10 @@ export default defineComponent({
       paramCols,
       paramMapper,
       params,
+      dftDtSrc,
+      dtSrcCols,
+      dtSrcMapper,
+      dataSrcs,
 
       onSaveFieldSubmit,
       onDelFieldSubmit,

@@ -235,6 +235,8 @@
     ],
     "Select": [],
     "Checkbox": [],
+    "Textarea": [],
+    "Cascader": [],
     "Unknown": [],
     "Page": [
       {

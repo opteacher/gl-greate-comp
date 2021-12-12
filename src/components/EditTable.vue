@@ -1,122 +1,128 @@
 <template>
-<a-space class="p-10">
-  <a-button v-if="addable" type="primary" @click="addMod = true">
-    添加{{title}}
-  </a-button>
-  <template v-if="description">
-    <InfoCircleOutlined style="color: #1890ff"/>
-    <p class="mb-0">{{description}}</p>
-  </template>
-</a-space>
-<a-table
-  :dataSource="dataSource"
-  :columns="columns"
-  :scroll="{ y: sclHeight }"
-  :pagination="false"
->
-  <template
-    v-for="(value, key) in dataMapper"
-    :key="key"
-    #[key]="{ index, text, record }"
+<div class="white-bkgd mb-10">
+  <a-space class="p-10">
+    <a-button v-if="addable" type="primary" @click="addMod = true">
+      添加{{title}}
+    </a-button>
+    <template v-if="description">
+      <InfoCircleOutlined style="color: #1890ff"/>
+      <p class="mb-0">{{description}}</p>
+    </template>
+  </a-space>
+  <a-table
+    :dataSource="dataSource"
+    :columns="columns"
+    :pagination="false"
+    style="overflow-y: hidden;"
   >
-    <template v-if="value.type === 'Input'">
-      <a-input
-        v-if="index === edtKey"
-        v-model:value="edtRecord[key]"
-        :placeholder="`输入${value.label}`"
-      />
-      <template v-else-if="$slots[key]">
-        <slot :name="key" v-bind="{ record }"/>
+    <template
+      v-for="(value, key) in dataMapper"
+      :key="key"
+      #[key]="{ index, text, record }"
+    >
+      <template v-if="value.type === 'Input'">
+        <a-input
+          v-if="index === edtKey"
+          v-model:value="edtRecord[key]"
+          :placeholder="`输入${value.label}`"
+        />
+        <template v-else-if="$slots[key]">
+          <slot :name="key" v-bind="{ record }"/>
+        </template>
+        <template v-else>{{text || '-'}}</template>
       </template>
-      <template v-else>{{text}}</template>
-    </template>
-    <template v-else-if="value.type === 'Select'">
-      <a-select class="w-100"
-        v-if="index === edtKey"
-        v-model:value="edtRecord[key]"
-        :placeholder="`选择${value.label}`"
-      >
-        <a-select-option
-          v-for="item in value.options"
-          :key="item.value || item"
-          :value="item.value || item"
+      <template v-else-if="value.type === 'Select'">
+        <a-select class="w-100"
+          v-if="index === edtKey"
+          v-model:value="edtRecord[key]"
+          :placeholder="`选择${value.label}`"
         >
-          {{item.title || item}}
-        </a-select-option>
-      </a-select>
-      <template v-else-if="$slots[key]">
-        <slot :name="key" v-bind="{ record }"/>
-      </template>
-      <template v-else>{{text}}</template>
-    </template>
-    <template v-else-if="value.type === 'Checkbox'">
-      <a-checkbox
-        v-if="index === edtKey"
-        v-model:checked="edtRecord[key]"
-      >
-        {{edtRecord[key]
-          ? (value.chkLabels[1] || '是')
-          : (value.chkLabels[0] || '否')}}
-      </a-checkbox>
-      <template v-else-if="$slots[key]">
-        <slot :name="key" v-bind="{ record }"/>
-      </template>
-      <template v-else>
-        {{record[key]
-          ? (value.chkLabels[1] || '是')
-          : (value.chkLabels[0] || '否')}}
-      </template>
-    </template>
-    <template v-else-if="value.type === 'Cascader'">
-      <a-cascader
-        v-if="index === edtKey"
-        v-model:value="edtRecord[key]"
-        :options="value.options"
-        :placeholder="`选择${value.label}`"
-      />
-      <template v-else-if="$slots[key]">
-        <slot :name="key" v-bind="{ record }"/>
-      </template>
-      <template v-else>
-        {{text}}
-      </template>
-    </template>
-  </template>
-  <template #action="{ index, record }">
-    <template v-if="index === edtKey">
-      <ul class="unstyled-list">
-        <li class="mb-3">
-          <a-button
-            type="primary" size="small"
-            @click="onSaveSubmit"
-          >保存</a-button>
-        </li>
-        <li>
-          <a-button size="small"
-            @click="onCclClicked()"
-          >取消</a-button>
-        </li>
-      </ul>
-    </template>
-    <template v-else>
-      <ul class="unstyled-list">
-        <li v-if="editable" class="mb-3">
-          <a-button size="small"
-            @click="onEditClicked(index, record)"
-          >编辑</a-button>
-        </li>
-        <li>
-          <a-popconfirm
-            title="确定删除该字段"
-            @confirm="onDelSubmit(record.key)"
+          <a-select-option
+            v-for="item in value.options"
+            :key="typeof item === 'string' ? item : item.value"
+            :value="typeof item === 'string' ? item : item.value"
           >
-            <a-button size="small" danger>删除</a-button>
-          </a-popconfirm>
-        </li>
-      </ul>
+            {{typeof item === 'string' ? item : item.title}}
+          </a-select-option>
+        </a-select>
+        <template v-else-if="$slots[key]">
+          <slot :name="key" v-bind="{ record }"/>
+        </template>
+        <template v-else>{{text || '-'}}</template>
+      </template>
+      <template v-else-if="value.type === 'Checkbox'">
+        <a-checkbox
+          v-if="index === edtKey"
+          v-model:checked="edtRecord[key]"
+        >
+          {{edtRecord[key] ? (
+            value.chkLabels ? value.chkLabels[1] : '是'
+          ) : (
+            value.chkLabels ? value.chkLabels[0] : '否'
+          )}}
+        </a-checkbox>
+        <template v-else-if="$slots[key]">
+          <slot :name="key" v-bind="{ record }"/>
+        </template>
+        <template v-else>
+          {{record[key] ? (
+            value.chkLabels ? value.chkLabels[1] : '是'
+          ) : (
+            value.chkLabels ? value.chkLabels[0] : '否'
+          )}}
+        </template>
+      </template>
+      <template v-else-if="value.type === 'Cascader'">
+        <a-cascader
+          v-if="index === edtKey"
+          v-model:value="edtRecord[key]"
+          :options="value.options"
+          :placeholder="`选择${value.label}`"
+        />
+        <template v-else-if="$slots[key]">
+          <slot :name="key" v-bind="{ record }"/>
+        </template>
+        <template v-else>
+          {{text || '-'}}
+        </template>
+      </template>
     </template>
-  </template>
-</a-table>
+    <template #action="{ index, record }">
+      <template v-if="index === edtKey">
+        <ul class="unstyled-list">
+          <li class="mb-3">
+            <a-button
+              type="primary" size="small"
+              @click="onSaveSubmit"
+            >保存</a-button>
+          </li>
+          <li>
+            <a-button size="small"
+              @click="onCclClicked()"
+            >取消</a-button>
+          </li>
+        </ul>
+      </template>
+      <template v-else>
+        <ul class="unstyled-list">
+          <li v-if="editable" class="mb-3">
+            <a-button size="small"
+              @click="onEditClicked(index, record)"
+            >编辑</a-button>
+          </li>
+          <li>
+            <a-popconfirm
+              title="确定删除该字段"
+              @confirm="onDelSubmit(record.key)"
+            >
+              <a-button size="small" danger>删除</a-button>
+            </a-popconfirm>
+          </li>
+        </ul>
+      </template>
+    </template>
+  </a-table>
+</div>
 </template>
 
 <script lang="ts">

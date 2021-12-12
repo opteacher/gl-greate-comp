@@ -14,7 +14,7 @@
     <a-radio-group
       :value="store.getters.designType"
       button-style="solid"
-      @change="e => { store.commit('SET_DESIGN_TYPE', e.target.value) }"
+      @change="(e: any) => { store.commit('SET_DESIGN_TYPE', e.target.value) }"
     >
       <a-radio-button value="frontend">前端设计</a-radio-button>
       <a-radio-button value="backend">后端设计</a-radio-button>

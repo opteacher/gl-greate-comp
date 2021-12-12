@@ -9,8 +9,11 @@
       'border-right': '1px solid rgb(240, 242, 245)',
       'overflow-y': 'auto'
     }">
-      <compo-box v-if="dsgnType === 'frontend'" @addCompo="onAddCmpOfTypeClicked"/>
-      <ipt-pams-box v-else-if="dsgnType === 'backend'"/>
+      <template v-if="dsgnType === 'frontend'">
+        <compo-box @addCompo="onAddCmpOfTypeClicked"/>
+        <struct-box @addCompo="onAddCmpOfParentClicked"/>
+      </template>
+      <class-enum-box v-else-if="dsgnType === 'backend'"/>
     </a-layout-sider>
     <a-layout-content id="ctrMain" style="flex: 1; overflow: scroll">
       <div
@@ -21,7 +24,7 @@
           v-for="page in pages"
           :key="page.name"
           :page="page"
-          :ref="el => { pgRefs[page.name] = el }"
+          :ref="(el: any) => { pgRefs[page.name] = el }"
         />
       </div>
       <div
@@ -63,10 +66,11 @@ import BackendPanel from '../components/BackendPanel.vue'
 import TopMenuBox from '../components/TopMenuBox.vue'
 import FormDialog from '../components/FormDialog.vue'
 import ExpVarsBox from '../components/ExpVarsBox.vue'
-import IptPamsBox from '../components/IptPamsBox.vue'
+import ClassEnumBox from '../components/ClassEnumBox.vue'
+import StructBox from '../components/StructBox.vue'
 import { useStore } from 'vuex'
 import { waitFor, until } from '@/utils'
-import { Compo, CompoInfo, CompoType, Mapper } from '@/common'
+import { Compo, Mapper, AddCmpForm } from '@/common'
 const addCmpMapper = new Mapper({
   name: {
     label: '组件名称',
@@ -92,17 +96,6 @@ const addCmpMapper = new Mapper({
     ]
   }
 })
-class AddCmpForm {
-  name: string
-  gptp: string[]
-  parent: string
-
-  constructor () {
-    this.name = ''
-    this.gptp = []
-    this.parent = ''
-  }
-}
 export default defineComponent({
   name: 'MainPanel',
   components: {
@@ -115,7 +108,8 @@ export default defineComponent({
     TopMenuBox,
     FormDialog,
     ExpVarsBox,
-    IptPamsBox
+    ClassEnumBox,
+    StructBox
   },
   setup () {
     const store = useStore()
@@ -202,17 +196,16 @@ export default defineComponent({
       addCmpMapper['gptp'].options = options
     })
 
-    function onAddCmpOfTypeClicked (group: string, cmpNam: string) {
+    function onAddCmpOfTypeClicked (group: string, ctype: string) {
       showAddCmp.value = true
-      addCmpForm.gptp = [group, cmpNam as CompoType]
+      addCmpForm.gptp = [group, ctype]
     }
     function onAddCmpOfParentClicked (parent: string) {
       showAddCmp.value = true
       addCmpForm.parent = parent
     }
     function onAddCmpSubmit (addCmp: AddCmpForm) {
-      // @_@
-      store.commit('ADD_COMPO', addCmp)
+      store.commit('ADD_COMPO', (new Compo()).initByForm(addCmp))
     }
     return {
       store,

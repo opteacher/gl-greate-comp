@@ -13,7 +13,7 @@
     :wrapper-col="{ span: 18 }"
   >
     <template v-for="(value, key) in formMapper" :key="key">
-      <template v-if="isDisplay(key)">
+      <template v-if="isDisplay(key as string)">
         <a-form-item :ref="key" :name="key">
           <template #label>
             {{value.label}}&nbsp;
@@ -35,11 +35,14 @@
           >
             <a-select-option
               v-for="item in value.options"
-              :key="item.value || item"
-              :value="item.value || item"
+              :key="typeof item === 'string' ? item : item.value"
+              :value="typeof item === 'string' ? item : item.value"
             >
-              {{item.title || item}}
-              <span v-if="item.subTitle" style="float: right">
+              {{typeof item === 'string' ? item : item.title}}
+              <span
+                v-if="typeof item !== 'string' && item.subTitle"
+                style="float: right"
+              >
                 {{item.subTitle}}
               </span>
             </a-select-option>
@@ -51,8 +54,8 @@
             :disabled="value.disabled"
           >
             {{formState[key]
-              ? (value.chkLabels[1] || '是')
-              : (value.chkLabels[0] || '否')}}
+              ? (value.chkLabels ? value.chkLabels[1] : '是')
+              : (value.chkLabels ? value.chkLabels[0] : '否')}}
           </a-checkbox>
           <a-textarea
             v-else-if="value.type === 'Textarea'"
@@ -85,7 +88,6 @@ export default defineComponent({
   props: {
     show: { type: Boolean, required: true },
     title: { type: String, default: 'Form Dialog' },
-    onSubmit: { type: Function, required: true },
     object: { type: Object, required: true },
     mapper: { type: Mapper, required: true },
   },
