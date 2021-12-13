@@ -138,7 +138,7 @@ export default defineComponent({
       // @_@：测试用
       store.commit('SEL_NODE', 'item001')
 
-      const el = await waitFor('ctrMain', undefined, 5)
+      const el = await waitFor('ctrMain', { loop: 5 })
       if (!el) {
         return
       }

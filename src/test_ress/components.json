@@ -36,7 +36,9 @@
       "name": "Select",
       "desc": "下拉选择框",
       "group": "ant-design-vue",
-      "cover": "https://gw.alipayobjects.com/zos/alicdn/_0XzgOis7/Select.svg"
+      "cover": "https://gw.alipayobjects.com/zos/alicdn/_0XzgOis7/Select.svg",
+      "lib": "ant-design-vue/lib/select",
+      "tag": "a-select"
     },
     {
       "name": "Icon",

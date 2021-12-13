@@ -35,7 +35,7 @@ export type DesignType = 'frontend' | 'backend'
 
 function fixCmpByInf (state: any, compo: Compo): Compo {
   const cmpInf = state.compoLibrary.find((cmp: any) => {
-    return cmp.name === compo.ctype
+    return cmp.name === compo.ctype && cmp.group === compo.group
   })
   if (cmpInf) {
     compo.tag = cmpInf.tag || ''
@@ -141,11 +141,11 @@ export default createStore({
       }
     },
     UPD_MASK (state, payload: string) {
-      let el: HTMLElement | null = document
-        .getElementById(payload)
-      if (!el) {
+      const els: NodeListOf<HTMLElement> = document.getElementsByName(payload)
+      if (!els.length) {
         return
       }
+      let el: HTMLElement | null = els[0]
       const compo = state.components[payload]
       if (compo.class) {
         while (!el.classList.contains(compo.class)) {

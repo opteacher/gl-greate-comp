@@ -83,6 +83,14 @@
         </a-modal>
       </template>
     </a-input>
+    <template v-else-if="prop.type === 'collection'">
+      <a-tag v-for="(option, index) in prop.value" :key="index">
+        {{option}}
+      </a-tag>
+      <a-tag style="background: #fff; borderStyle: dashed;">
+        <template #icon><PlusOutlined /></template> 添加选项
+      </a-tag>
+    </template>
   </a-descriptions-item>
 </a-descriptions>
 </template>
@@ -92,6 +100,7 @@ import { defineComponent, ref } from 'vue'
 import { useStore } from 'vuex'
 import { Property, Unit, UnitAry } from '../common'
 import MyColorSelect from '../components/MyColorSelect.vue'
+import { PlusOutlined } from '@ant-design/icons-vue'
 export default defineComponent({
   name: 'ComponentItems',
   props: {
@@ -100,7 +109,8 @@ export default defineComponent({
     prefix: { type: String, default: '' }
   },
   components: {
-    MyColorSelect
+    MyColorSelect,
+    PlusOutlined
   },
   setup (props) {
     const store = useStore()

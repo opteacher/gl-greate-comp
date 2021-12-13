@@ -153,24 +153,28 @@
       {
         "title": "组件名",
         "key": "name",
+        "group": "attr",
         "type": "string",
         "value": ""
       },
       {
         "title": "组件类型",
         "key": "ctype",
+        "group": "attr",
         "type": "text",
         "value": "Input"
       },
       {
         "title": "提示文字",
         "key": "placeholder",
+        "group": "attr",
         "type": "string",
         "value": "Please input texts"
       },
       {
         "title": "类型",
         "key": "type",
+        "group": "attr",
         "type": "select",
         "options": ["text", "number", "password", "phone", "email"],
         "value": "text"
@@ -178,12 +182,14 @@
       {
         "title": "位置",
         "key": "position",
+        "group": "style",
         "type": "position",
         "value": null
       },
       {
         "title": "尺寸",
         "key": "size",
+        "group": "style",
         "type": "size",
         "value": null
       }
@@ -192,30 +198,35 @@
       {
         "title": "组件名",
         "key": "name",
+        "group": "attr",
         "type": "string",
         "value": ""
       },
       {
         "title": "组件类型",
         "key": "ctype",
+        "group": "attr",
         "type": "text",
         "value": "Button"
       },
       {
         "title": "按钮文本",
         "key": "#inner",
+        "group": "attr",
         "type": "string",
         "value": "按钮"
       },
       {
         "title": "按钮图标",
         "key": "type",
+        "group": "attr",
         "type": "icon",
         "value": ""
       },
       {
         "title": "类型",
         "key": "type",
+        "group": "attr",
         "type": "select",
         "value": "default",
         "options": ["default", "primary", "link"]
@@ -223,17 +234,55 @@
       {
         "title": "位置",
         "key": "position",
+        "group": "style",
         "type": "position",
         "value": null
       },
       {
         "title": "尺寸",
         "key": "size",
+        "group": "style",
         "type": "size",
         "value": null
       }
     ],
-    "Select": [],
+    "Select": [
+      {
+        "title": "组件名",
+        "key": "name",
+        "group": "attr",
+        "type": "string",
+        "value": ""
+      },
+      {
+        "title": "组件类型",
+        "key": "ctype",
+        "group": "attr",
+        "type": "text",
+        "value": "Select"
+      },
+      {
+        "title": "选项",
+        "key": "options",
+        "group": "attr",
+        "type": "collection",
+        "value": []
+      },
+      {
+        "title": "位置",
+        "key": "position",
+        "group": "style",
+        "type": "position",
+        "value": null
+      },
+      {
+        "title": "尺寸",
+        "key": "size",
+        "group": "style",
+        "type": "size",
+        "value": null
+      }
+    ],
     "Checkbox": [],
     "Textarea": [],
     "Cascader": [],
@@ -242,12 +291,14 @@
       {
         "title": "页面名",
         "key": "name",
+        "group": "attr",
         "type": "string",
         "value": ""
       },
       {
         "title": "页面类型",
         "key": "ptype",
+        "group": "attr",
         "type": "select",
         "options": ["item", "list", "form", "other"],
         "value": ""
@@ -255,12 +306,14 @@
       {
         "title": "页面尺寸",
         "key": "size",
+        "group": "style",
         "type": "size",
         "value": null
       },
       {
         "title": "页面样式",
         "key": "styles",
+        "group": "style",
         "type": "styles",
         "value": null
       }
@@ -269,36 +322,42 @@
       {
         "title": "块名",
         "key": "name",
+        "group": "attr",
         "type": "string",
         "value": ""
       },
       {
         "title": "内容",
         "key": "#inner",
+        "group": "attr",
         "type": "string",
         "value": "内容"
       },
       {
         "title": "位置",
         "key": "position",
+        "group": "style",
         "type": "position",
         "value": null
       },
       {
         "title": "布局",
         "key": "layout",
+        "group": "style",
         "type": "layout",
         "value": null
       },
       {
         "title": "尺寸",
         "key": "size",
+        "group": "style",
         "type": "size",
         "value": null
       },
       {
         "title": "样式",
         "key": "styles",
+        "group": "style",
         "type": "styles",
         "value": null
       }

@@ -46,9 +46,9 @@ export default defineComponent({
 
     onMounted(async () => {
       onSizeChanged()
-      const el = await waitFor(props.page.name, undefined, 5)
+      const el = await waitFor(props.page.name, { loop: 5 })
       if (!el) {
-        return
+        throw new Error('未找到组件在页面上的元素')
       }
       rszObs.observe(el as Element)
     })

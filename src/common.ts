@@ -369,9 +369,9 @@ export class Compo extends StrIterable {
 
   public toAttributes (): any {
     const ret: {
-      id: string
+      name: string
       [specProp: string]: any
-    } = { id: this.name }
+    } = { name: this.name }
     const style = buildStyles(this)
     if (style) {
       ret['style'] = style
@@ -391,6 +391,7 @@ export class Compo extends StrIterable {
     tgt.tag = src.tag || tgt.tag
     tgt.class = src.class || tgt.class
     tgt.parent = src.parent || tgt.parent
+    tgt.group = src.group || tgt.group
     tgt.ctype = src.ctype || tgt.ctype
     if (src.size) {
       Size.copy(src.size, tgt.size)
@@ -454,9 +455,11 @@ export class Cond {
     return tgt
   }
 }
+export type PropGroup = 'attr' | 'style'
 export class Property {
   title: string
   key: string
+  group?: PropGroup
   type: PropType
   value: string | number
   options?: SelOpn[] // 当type为select
@@ -474,6 +477,7 @@ export class Property {
     tgt = tgt || new Property()
     tgt.title = src.title || ''
     tgt.key = src.key || ''
+    tgt.group = src.group || undefined
     tgt.type = src.type || 'text'
     tgt.value = src.value || ''
     tgt.options = src.options || []

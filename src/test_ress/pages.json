@@ -17,6 +17,7 @@
         {
           "name": "input001",
           "parent": "item001",
+          "group": "element-plus",
           "ctype": "Input",
           "placeholder": "请输入",
           "type": "text"
@@ -24,8 +25,16 @@
         {
           "name": "block001",
           "parent": "item001",
+          "group": "basic",
           "ctype": "Block",
           "#inner": "内容"
+        },
+        {
+          "name": "select001",
+          "parent": "item001",
+          "group": "ant-design-vue",
+          "ctype": "Select",
+          "value": ["内容"]
         }
       ],
       "classes": [

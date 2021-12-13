@@ -43,15 +43,11 @@
 </template>
 
 <script lang="ts">
-import { Compo, DropPos, Point, PosType, Rect } from '@/common'
+import { Compo, DropPos, Point } from '@/common'
 import { waitFor } from '@/utils'
 import { computed, defineComponent, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import DragDropDlg from './DragDropDlg.vue'
-interface Mask {
-  area: Rect
-  position: PosType
-}
 export default defineComponent({
   name: 'ComponentCard',
   components: {
@@ -92,7 +88,7 @@ export default defineComponent({
     const isDragIn = ref(false)
 
     onMounted(async () => {
-      const el = await waitFor(props.compo.name, undefined, 5)
+      const el = await waitFor(props.compo.name, { loop: 5, getBy: 'name' })
       if (!el) {
         return
       }

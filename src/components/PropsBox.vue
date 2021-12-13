@@ -3,7 +3,7 @@
   class="h-100"
   tab-position="top"
   type="card"
-  default-active-key="default"
+  default-active-key="attr"
   :tabBarStyle="{
     'margin-bottom': 0,
     'position': 'fixed',
@@ -14,24 +14,28 @@
   }"
   style="overflow: auto"
 >
-  <a-tab-pane key="default" tab="默认属性">
-  </a-tab-pane>
-  <a-tab-pane key="css" tab="CSS属性" style="padding-top: 40px; overflow-y: scroll">
+  <a-tab-pane key="attr" tab="基本属性" style="padding-top: 40px; overflow-y: scroll">
     <a-empty
       v-if="isNoneSeled"
       class="pt-30"
       description="没有组件被选择"
     />
-    <template v-else>
-      <properties :properties="bscProps" title="基本信息"/>
-      <properties
-        v-for="item in subProps"
-        :key="item.key"
-        :title="item.title"
-        :prefix="item.key"
-        :properties="item.props"
-      />
-    </template>
+    <properties v-else :properties="bscProps" title="基本信息"/>
+  </a-tab-pane>
+  <a-tab-pane key="style" tab="样式属性" style="padding-top: 40px; overflow-y: scroll">
+    <a-empty
+      v-if="isNoneSeled"
+      class="pt-30"
+      description="没有组件被选择"
+    />
+    <properties
+      v-else
+      v-for="item in subProps"
+      :key="item.key"
+      :title="item.title"
+      :prefix="item.key"
+      :properties="item.props"
+    />
   </a-tab-pane>
 </a-tabs>
 </template>
@@ -63,7 +67,6 @@ export default defineComponent({
     })
     const bscProps = ref([] as Property[])
     const subProps = ref([] as SubProps[])
-    const actProps = ref('basic')
 
     watch(seledPage, () => {
       onSelPageChanged()
@@ -111,7 +114,11 @@ export default defineComponent({
         } else {
           // 基础类型，放在basic里
           const newProp = Property.copy(prop)
-          passValue(newProp, obj[prop.key])
+          let objVal = obj[prop.key]
+          if ('group' in obj && prop.key === 'ctype') {
+            objVal = `${obj['group']} / ${objVal}`
+          }
+          passValue(newProp, objVal)
           bscProps.push(newProp)
         }
       }
@@ -138,7 +145,6 @@ export default defineComponent({
       isNoneSeled,
       bscProps,
       subProps,
-      actProps,
     }
   }
 })
