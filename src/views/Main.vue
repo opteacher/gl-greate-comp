@@ -24,7 +24,7 @@
           v-for="page in pages"
           :key="page.name"
           :page="page"
-          :ref="(el: any) => { pgRefs[page.name] = el }"
+          :ref="(el) => { pgRefs[page.name] = el }"
         />
       </div>
       <div

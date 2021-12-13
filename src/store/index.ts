@@ -16,6 +16,7 @@ import {
   Property,
   DragDropInfo,
   DropPos,
+  Rect,
 } from '@/common'
 import { createStore } from 'vuex'
 import pageRess from '../test_ress/pages.json'
@@ -59,12 +60,12 @@ export default createStore({
     selUiLibrary: '',
     pages: [] as Page[],
     components: {} as { [name: string]: Compo },
+    mdfdCompos: [] as string[],
     compoLibrary: [] as CompoInfo[],
     selPage: dftPage,
     selCompo: dftCompo,
     curOper: 'move' as OperType,
     avaTypes: basicTypes,
-    fcRefresh: false,
     dragDropVisible: false,
     dragDropInfo: {} as DragDropInfo
   },
@@ -139,6 +140,27 @@ export default createStore({
         ]
       }
     },
+    UPD_MASK (state, payload: string) {
+      let el: HTMLElement | null = document
+        .getElementById(payload)
+      if (!el) {
+        return
+      }
+      const compo = state.components[payload]
+      if (compo.class) {
+        while (!el.classList.contains(compo.class)) {
+          el = el?.parentElement
+          if (!el) {
+            return
+          }
+        }
+      }
+      const cmpMask = compo.mask
+      cmpMask.left = el.offsetLeft
+      cmpMask.top = el.offsetTop
+      cmpMask.width = el.offsetWidth
+      cmpMask.height = el.offsetHeight
+    },
     SET_PROP_VAL (state, payload: SetPropParam | SetPropParam[]) {
       if (!Array.isArray(payload)) {
         payload = [payload]
@@ -162,7 +184,6 @@ export default createStore({
         ] : propParam.value
         selected[key] = value
       }
-      state.fcRefresh = true
     },
     ADD_COMPO (state, payload: Compo | {
       compo: Compo, index: number, replace: boolean
@@ -216,6 +237,12 @@ export default createStore({
     },
     SET_OPER (state, payload: OperType) {
       state.curOper = payload
+    },
+    ADD_MDFD_COMPO (state, payload: string[] = []) {
+      state.mdfdCompos.push(...payload)
+    },
+    RMV_MDFD_COMPO (state, payload: string) {
+      state.mdfdCompos.splice(state.mdfdCompos.indexOf(payload), 1)
     },
     SAVE_ATTR (state, payload: {
       prop: string,
@@ -286,9 +313,6 @@ export default createStore({
       const clazz = Clazz.copy(payload)
       clazz.key = page.classes.length
       page.classes.push(clazz)
-    },
-    SET_FC_REFRESH (state, payload = false) {
-      state.fcRefresh = payload
     },
     SET_DD_VISIBLE (state, payload: boolean) {
       state.dragDropVisible = payload
@@ -388,7 +412,10 @@ export default createStore({
       default:
         return
       }
-      state.fcRefresh = true
+      commit('ADD_MDFD_COMPO', [
+        dragDropInfo.dragCompo,
+        dragDropInfo.dropCompo
+      ])
     }
   },
   getters: {
@@ -440,8 +467,8 @@ export default createStore({
     avaTypes (state): string[] {
       return state.avaTypes
     },
-    forceRefresh (state): boolean {
-      return state.fcRefresh
+    modifiedCompos (state): string[] {
+      return state.mdfdCompos
     },
     showDragDrop (state) {
       return state.dragDropVisible

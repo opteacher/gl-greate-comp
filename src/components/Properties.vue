@@ -1,7 +1,7 @@
 <template>
 <a-descriptions bordered :column="1" size="small">
   <template #title>
-    <h4 class="mb-0 ml-16">{{title}}</h4>
+    <h4 class="mb-0 ml-16 mt-20">{{title}}</h4>
   </template>
   <a-descriptions-item
     v-for="prop in properties"
@@ -26,7 +26,7 @@
       <template #addonAfter>
         <a-select
           v-model:value="prop.unit"
-          style="width: 80px"
+          style="width: 60px"
           @change="e => { onUnitChanged(e, prop) }"
           :disabled="chkDisabled(prop)"
         >

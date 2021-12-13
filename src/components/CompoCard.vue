@@ -9,11 +9,11 @@
 >
   <div
     :style="{
-      position: mask.position,
-      left: `${mask.area.left}px`,
-      top: `${mask.area.top}px`,
-      width: `${mask.area.width}px`,
-      height: `${mask.area.height}px`,
+      position: 'absolute',
+      left: `${compo.mask.left}px`,
+      top: `${compo.mask.top}px`,
+      width: `${compo.mask.width}px`,
+      height: `${compo.mask.height}px`,
       'z-index': 50,
       'background-color': 'transparent',
     }"
@@ -43,9 +43,9 @@
 </template>
 
 <script lang="ts">
-import { Compo, DragDropInfo, DropPos, Point, PosType, Rect } from '@/common'
+import { Compo, DropPos, Point, PosType, Rect } from '@/common'
 import { waitFor } from '@/utils'
-import { computed, defineComponent, onMounted, reactive, ref, watch } from 'vue'
+import { computed, defineComponent, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import DragDropDlg from './DragDropDlg.vue'
 interface Mask {
@@ -87,10 +87,6 @@ export default defineComponent({
     const isActive = computed(() => {
       return store.getters.seledCompo.name === props.compo.name
     })
-    const mask = reactive({
-      area: new Rect(),
-      position: 'absolute'
-    } as Mask)
     const mousedown = reactive(new Point(-1, -1))
     const rszObs = new ResizeObserver(updMask)
     const isDragIn = ref(false)
@@ -103,30 +99,20 @@ export default defineComponent({
       rszObs.observe(el as Element)
       updMask()
     })
-    watch(() => store.getters.forceRefresh, () => {
-      if (store.getters.forceRefresh && isActive.value) {
-        isDragIn.value = false
+    watch(() => store.getters.modifiedCompos.length, () => {
+      if (store.getters.modifiedCompos.includes(props.compo.name)) {
+        store.commit('RMV_MDFD_COMPO', props.compo.name)
+        nextTick(() => {
+          if (isActive.value) {
+            isDragIn.value = false
+          }
+          updMask()
+        })
       }
     })
 
     function updMask () {
-      let el: HTMLElement | null = document
-        .getElementById(props.compo.name)
-      if (!el) {
-        return
-      }
-      if (props.compo.class) {
-        while (!el.classList.contains(props.compo.class)) {
-          el = el?.parentElement
-          if (!el) {
-            return
-          }
-        }
-      }
-      mask.area.left = el.offsetLeft
-      mask.area.top = el.offsetTop
-      mask.area.width = el.offsetWidth
-      mask.area.height = el.offsetHeight
+      store.commit('UPD_MASK', props.compo.name)
     }
     function onCompoClicked () {
       store.commit('SEL_NODE', props.compo.name)
@@ -208,7 +194,6 @@ export default defineComponent({
     return {
       isActive,
       isDragIn,
-      mask,
       mousedown,
 
       onCompoClicked,

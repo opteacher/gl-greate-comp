@@ -320,15 +320,16 @@ export class Compo extends StrIterable {
   size: Size
   styles: Styles
   position: Position
+  mask: Rect
   layout: Layout
   children: Compo[]
   static cpIgnores: string[] = [
     'name', 'class', 'parent', 'group', 'ctype', 'size',
-    'styles', 'position', 'layout', 'children'
+    'styles', 'position', 'mask', 'layout', 'children'
   ]
   static attrIgnores: string[] = [
     'name', 'class', 'tag', 'parent', 'group', 'ctype', 'size',
-    'position', 'layout', 'children', 'styles', '#inner'
+    'position', 'mask', 'layout', 'children', 'styles', '#inner'
   ]
 
   constructor () {
@@ -342,6 +343,7 @@ export class Compo extends StrIterable {
     this.size = new Size()
     this.styles = new Styles()
     this.position = new Position()
+    this.mask = new Rect()
     this.layout = new Layout()
     this.children = []
   }
@@ -398,6 +400,9 @@ export class Compo extends StrIterable {
     }
     if (src.position) {
       Position.copy(src.position, tgt.position)
+    }
+    if (src.mask) {
+      Rect.copy(src.mask, tgt.mask)
     }
     if (src.layout) {
       Layout.copy(src.layout, tgt.layout)

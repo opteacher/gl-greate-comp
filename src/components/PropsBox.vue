@@ -1,32 +1,37 @@
 <template>
-<a-tabs tab-position="top" type="card" default-active-key="default" style="height: 100%">
+<a-tabs
+  class="h-100"
+  tab-position="top"
+  type="card"
+  default-active-key="default"
+  :tabBarStyle="{
+    'margin-bottom': 0,
+    'position': 'fixed',
+    'top': '116px',
+    'width': '300px',
+    'background-color': 'white',
+    'z-index': 100
+  }"
+  style="overflow: auto"
+>
   <a-tab-pane key="default" tab="默认属性">
   </a-tab-pane>
-  <a-tab-pane key="css" tab="CSS属性">
-    <div style="overflow-y: scroll">
-      <a-empty
-        v-if="isNoneSeled"
-        class="pt-30"
-        description="没有组件被选择"
+  <a-tab-pane key="css" tab="CSS属性" style="padding-top: 40px; overflow-y: scroll">
+    <a-empty
+      v-if="isNoneSeled"
+      class="pt-30"
+      description="没有组件被选择"
+    />
+    <template v-else>
+      <properties :properties="bscProps" title="基本信息"/>
+      <properties
+        v-for="item in subProps"
+        :key="item.key"
+        :title="item.title"
+        :prefix="item.key"
+        :properties="item.props"
       />
-      <template v-else>
-        <a-collapse v-model:activeKey="actProps">
-          <a-collapse-panel key="basic" header="基本信息">
-            <properties :properties="bscProps"/>
-          </a-collapse-panel>
-          <a-collapse-panel
-            v-for="item in subProps"
-            :key="item.key"
-            :header="item.title"
-          >
-            <properties
-              :prefix="item.key"
-              :properties="item.props"
-            />
-          </a-collapse-panel>
-        </a-collapse>
-      </template>
-    </div>
+    </template>
   </a-tab-pane>
 </a-tabs>
 </template>

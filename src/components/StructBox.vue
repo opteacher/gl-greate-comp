@@ -16,7 +16,7 @@
       <a-dropdown :trigger="['contextmenu']">
         <span>{{ title }}</span>
         <template #overlay>
-          <a-menu @click="(params: any) => {
+          <a-menu @click="(params) => {
             onTreeMenuClick(nodeKey, params.key)
           }">
             <a-menu-item key="addChild">
@@ -94,13 +94,8 @@ export default defineComponent({
     watch(() => [
       store.getters.pages.length,
       store.getters.compoNames.length,
-      store.getters.forceRefresh
-    ], () => {
-      if (store.getters.forceRefresh) {
-        store.commit('SET_FC_REFRESH')
-      }
-      cvtPagesToTree()
-    })
+      store.getters.modifiedCompos.length
+    ], cvtPagesToTree)
     cvtPagesToTree()
 
     function onTreeNodeSelect (seleds: string[], e: { selected: boolean }) {
