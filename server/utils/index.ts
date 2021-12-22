@@ -1,5 +1,5 @@
 import path from 'path'
-import { DataBase } from '../lib/databases/index.js'
+import { getDbByName } from '../lib/databases/index.js'
 import { readConfig } from '../lib/utils/index.js'
 
 export const cfgPath = path.resolve('..', 'configs')
@@ -11,12 +11,10 @@ export function getRootPath () {
   return path.resolve('..')
 }
 
-export async function getDatabase (): Promise<DataBase> {
-  const dbName = readConfig(mdlCfgPath).type
-  const ImplDB = await import(`../lib/databases/${dbName}.js`)
-  return new ImplDB.default(dbCfgPath)
-}
-
 export function getServerInfo () {
   return readConfig(svrCfgPath, true)
+}
+
+export function getDatabase() {
+  return getDbByName(readConfig(mdlCfgPath).type, dbCfgPath)
 }
