@@ -14,15 +14,15 @@
   }"
   style="overflow: auto"
 >
-  <a-tab-pane key="attr" tab="基本属性" style="padding-top: 40px; overflow-y: scroll">
+  <a-tab-pane class="tab-container" key="attr" tab="基本属性">
     <a-empty
       v-if="isNoneSeled"
       class="pt-30"
       description="没有组件被选择"
     />
-    <properties v-else :properties="bscProps" title="基本信息"/>
+    <properties v-else :properties="bscProps"/>
   </a-tab-pane>
-  <a-tab-pane key="style" tab="样式属性" style="padding-top: 40px; overflow-y: scroll">
+  <a-tab-pane class="tab-container" key="style" tab="样式属性">
     <a-empty
       v-if="isNoneSeled"
       class="pt-30"
@@ -37,6 +37,27 @@
       :properties="item.props"
     />
   </a-tab-pane>
+  <a-tab-pane class="tab-container" key="bind" tab="后台绑定">
+    <a-descriptions
+      v-if="seledType === 'page'"
+      bordered :column="1" size="small"
+    >
+      <template #title>
+        <h4 class="mb-10 ml-16 mt-20">页面绑定的变量</h4>
+      </template>
+      <a-descriptions-item
+        v-for="field in seledPage.fields"
+        :key="field.name"
+        :label="field.name"
+      >
+        <SwapOutlined v-if="field.flow === 'doubly'" />
+        <SwapRightOutlined v-else-if="field.flow === 'single'" />
+        <span class="ml-10">
+          {{field.bind[field.bind.length - 1]}}
+        </span>
+      </a-descriptions-item>
+    </a-descriptions>
+  </a-tab-pane>
 </a-tabs>
 </template>
 
@@ -46,6 +67,7 @@ import { useStore } from 'vuex'
 import Properties from './Properties.vue'
 import { Compo, Property, Page } from '@/common'
 import properties from '../test_ress/properties.json'
+import { SwapOutlined, SwapRightOutlined } from '@ant-design/icons-vue'
 interface SubProps {
   title: string
   key: string
@@ -56,6 +78,8 @@ export default defineComponent({
   emits: ['addCompo'],
   components: {
     Properties,
+    SwapOutlined,
+    SwapRightOutlined
   },
   setup () {
     const store = useStore()
@@ -65,6 +89,7 @@ export default defineComponent({
       return !store.getters.seledCompo.name
         && !store.getters.seledPage.name
     })
+    const seledType = computed(() => seledCompo.value.name ? 'component' : 'page')
     const bscProps = ref([] as Property[])
     const subProps = ref([] as SubProps[])
 
@@ -142,6 +167,8 @@ export default defineComponent({
     }
     return {
       seledPage,
+      seledCompo,
+      seledType,
       isNoneSeled,
       bscProps,
       subProps,
@@ -165,5 +192,10 @@ export default defineComponent({
 
 .props-form {
   border-top: 1px solid #f0f0f0;
+}
+
+.tab-container {
+  padding: 40px 10px 10px 10px;
+  overflow-y: auto
 }
 </style>

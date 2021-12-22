@@ -15,7 +15,7 @@
       </template>
       <class-enum-box v-else-if="dsgnType === 'backend'"/>
     </a-layout-sider>
-    <a-layout-content id="ctrMain" style="flex: 1; overflow: scroll">
+    <a-layout-content id="ctrMain" style="flex: 1; overflow: auto">
       <div
         v-if="dsgnType === 'frontend'"
         id="pnlMain" class="main-container"

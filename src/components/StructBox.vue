@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 <template>
 <div class="node-tree">
   <a-tree
@@ -207,6 +209,5 @@ export default defineComponent({
 .node-tree {
   border-top: 1px solid #d9d9d9;
   height: 50%;
-  overflow: scroll;
 }
 </style>

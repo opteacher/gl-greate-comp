@@ -1,7 +1,7 @@
 <template>
 <a-descriptions bordered :column="1" size="small">
   <template #title>
-    <h4 class="mb-0 ml-16 mt-20">{{title}}</h4>
+    <h4 class="mb-10 ml-16 mt-20">{{title}}</h4>
   </template>
   <a-descriptions-item
     v-for="prop in properties"
@@ -173,9 +173,3 @@ export default defineComponent({
   }
 })
 </script>
-
-<style lang="less">
-.ant-descriptions-view {
-  border: none !important;
-}
-</style>

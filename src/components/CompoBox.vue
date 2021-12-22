@@ -10,13 +10,13 @@
     'background-color': 'white',
     'z-index': 100
   }"
-  style="height: 50%; overflow: auto"
+  style="height: 50%"
 >
   <a-tab-pane
     v-for="group in groups"
     :key="group.name"
     :tab="group.name"
-    style="padding-top: 40px; overflow-y: scroll"
+    style="padding-top: 40px; overflow-y: auto"
   >
     <div class="plr-10">
       <a-list item-layout="horizontal" :data-source="group.compos">
